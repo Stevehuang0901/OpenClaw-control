@@ -41,6 +41,10 @@ export function OfficeScene({
   const focusProgress = focusWorkflow ? getWorkflowProgress(focusWorkflow) : null;
   const focusTask = focusProgress?.activeTask ?? null;
   const focusNextTask = focusProgress?.nextTask ?? null;
+  const focusApproval =
+    focusWorkflow
+      ? approvals.find((approval) => approval.workflowId === focusWorkflow.id) ?? null
+      : null;
   const focusAgent =
     focusTask?.ownerAgentId
       ? agentById.get(focusTask.ownerAgentId) ?? null
@@ -86,6 +90,84 @@ export function OfficeScene({
         </div>
       </div>
 
+      <div className="office-scene-topbar">
+        {focusWorkflow ? (
+          <article className="office-scene-brief">
+            <div className="office-scene-brief-header">
+              <span className="pixel-label">Scene board</span>
+              <span>{focusWorkflow.status}</span>
+            </div>
+            <div className="office-scene-brief-body">
+              <p className="office-scene-brief-title">{focusWorkflow.summary}</p>
+              <p className="office-scene-brief-copy">
+                {focusTask
+                  ? `${focusAgent?.name ?? "A desk"} is on ${focusTask.title}.`
+                  : focusNextTask
+                    ? `${focusNextTask.title} is queued as the next beat.`
+                    : "The office is between beats right now."}
+              </p>
+            </div>
+          </article>
+        ) : (
+          <article className="office-scene-brief office-scene-brief-empty">
+            <div className="office-scene-brief-header">
+              <span className="pixel-label">Scene board</span>
+              <span>idle</span>
+            </div>
+            <div className="office-scene-brief-body">
+              <p className="office-scene-brief-title">Waiting for the next mission</p>
+              <p className="office-scene-brief-copy">
+                Submit a request from the Office console and the floor will switch
+                from idle mode into live desk work.
+              </p>
+            </div>
+          </article>
+        )}
+
+        <div className="office-scene-summary">
+          <SceneStatCard
+            label="Current beat"
+            value={focusTask ? focusTask.title : "Between beats"}
+            detail={
+              focusTask
+                ? `${roleMeta[focusTask.role].label} at ${focusAgent?.name ?? "assigned desk"}`
+                : "No desk is actively working right now."
+            }
+          />
+          <SceneStatCard
+            label="Next"
+            value={focusNextTask ? focusNextTask.title : "No queued follow-up"}
+            detail={
+              focusNextTask
+                ? `${roleMeta[focusNextTask.role].label} will take the next packet.`
+                : focusApproval?.status === "pending"
+                  ? "Release approval is waiting on a decision."
+                  : "The queue is currently clear."
+            }
+          />
+          <SceneStatCard
+            label="Release"
+            value={focusApproval ? focusApproval.status : "not opened"}
+            detail={
+              focusApproval
+                ? truncate(focusApproval.summary, 82)
+                : latestApproved
+                  ? `Latest ship: ${truncate(latestApproved.title, 48)}`
+                  : "No approval packet has been opened yet."
+            }
+            tone={
+              focusApproval?.status === "approved"
+                ? "mint"
+                : focusApproval?.status === "rejected"
+                  ? "coral"
+                  : focusApproval?.status === "pending"
+                    ? "brass"
+                    : "neutral"
+            }
+          />
+        </div>
+      </div>
+
       <div className="office-stage">
         <div className="office-wall" />
         <div className="office-sunbeam" />
@@ -102,36 +184,6 @@ export function OfficeScene({
         <div className="office-route office-route-lounge-left" />
         <div className="office-route office-route-lounge-right" />
         <div className="office-lounge-sign">Idle mode lounge</div>
-        {focusWorkflow ? (
-          <div className="office-storyboard">
-            <div className="office-storyboard-header">
-              <span className="pixel-label">Scene board</span>
-              <span>{focusWorkflow.status}</span>
-            </div>
-            <div className="office-storyboard-body">
-              <p className="office-storyboard-title">{focusWorkflow.summary}</p>
-              <p className="office-storyboard-copy">
-                {focusTask
-                  ? `${focusAgent?.name ?? "A desk"} is on ${focusTask.title}.`
-                  : focusNextTask
-                    ? `${focusNextTask.title} is the next beat waiting to fire.`
-                    : "The office is between beats right now."}
-              </p>
-              <div className="office-storyboard-meta">
-                <span>
-                  {focusTask
-                    ? `${roleMeta[focusTask.role].label} · ${formatClock(
-                        focusTask.startedAt ?? focusWorkflow.updatedAt
-                      )}`
-                    : `Updated ${formatClock(focusWorkflow.updatedAt)}`}
-                </span>
-                <span>
-                  {focusProgress?.completedTasks ?? 0}/{focusProgress?.totalTasks ?? 0} settled
-                </span>
-              </div>
-            </div>
-          </div>
-        ) : null}
         <div className="office-rug" />
         <div className="office-card-table" />
         <div className="office-card-deck" />
@@ -142,9 +194,6 @@ export function OfficeScene({
         <div className="office-plant office-plant-right" />
         {celebrationAgent && latestApproved ? (
           <>
-            <div className="office-approval-banner">
-              Approved: {truncate(latestApproved.title, 42)}
-            </div>
             <div
               className="office-celebration"
               style={
@@ -308,34 +357,34 @@ export function OfficeScene({
             </div>
           );
         })}
+      </div>
 
-        <div className="office-radio">
-          <div className="office-radio-header">
-            <span className="pixel-label">Collab Radio</span>
-            <span>{liveMessages.length} live notes</span>
-          </div>
-          <div className="office-radio-list">
-            {liveMessages.length > 0 ? (
-              liveMessages.map((message) => (
-                <div key={message.id} className="office-radio-entry">
-                  <span className="office-radio-route">
-                    {agentById.get(message.fromAgentId)?.name ?? "Gateway"} to{" "}
-                    {agentById.get(message.toAgentId)?.name ?? "Gateway"}
-                  </span>
-                  <span className="office-radio-copy">
-                    {truncate(message.payload, 78)}
-                  </span>
-                </div>
-              ))
-            ) : (
-              <div className="office-radio-entry">
+      <div className="office-radio-panel">
+        <div className="office-radio-header">
+          <span className="pixel-label">Collab Radio</span>
+          <span>{liveMessages.length} live notes</span>
+        </div>
+        <div className="office-radio-list">
+          {liveMessages.length > 0 ? (
+            liveMessages.map((message) => (
+              <div key={message.id} className="office-radio-entry">
+                <span className="office-radio-route">
+                  {agentById.get(message.fromAgentId)?.name ?? "Gateway"} to{" "}
+                  {agentById.get(message.toAgentId)?.name ?? "Gateway"}
+                </span>
                 <span className="office-radio-copy">
-                  The floor is quiet. Idle crew is playing cards, camping at the
-                  arcade, and waiting for the next request.
+                  {truncate(message.payload, 92)}
                 </span>
               </div>
-            )}
-          </div>
+            ))
+          ) : (
+            <div className="office-radio-entry">
+              <span className="office-radio-copy">
+                The floor is quiet. Idle crew is playing cards, camping at the
+                arcade, and waiting for the next request.
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </section>
@@ -344,3 +393,32 @@ export function OfficeScene({
 
 const packetLabel = (task: TaskRecord | undefined) =>
   task ? `${task.role.slice(0, 3).toUpperCase()}` : "PKT";
+
+function SceneStatCard({
+  label,
+  value,
+  detail,
+  tone = "neutral"
+}: {
+  label: string;
+  value: string;
+  detail: string;
+  tone?: "mint" | "coral" | "brass" | "neutral";
+}) {
+  const toneClass =
+    tone === "mint"
+      ? "office-scene-card-mint"
+      : tone === "coral"
+        ? "office-scene-card-coral"
+        : tone === "brass"
+          ? "office-scene-card-brass"
+          : "";
+
+  return (
+    <article className={`office-scene-card ${toneClass}`}>
+      <p className="office-scene-card-label">{label}</p>
+      <p className="office-scene-card-value">{value}</p>
+      <p className="office-scene-card-detail">{detail}</p>
+    </article>
+  );
+}
