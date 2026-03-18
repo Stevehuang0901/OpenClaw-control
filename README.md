@@ -5,9 +5,10 @@ ClawControl is a full end-to-end multi-agent control room built for OpenClaw-sty
 ## What it does
 
 - Runs a shared gateway that creates workflows, tracks task dependencies, and logs every handoff.
-- Simulates multiple agents with distinct roles: collector, analyzer, writer, and validator.
+- Routes multiple role-based desks: collector, analyzer, writer, and validator.
+- Uses `openclaw agent --local --agent main --json` to generate real task packets when the local CLI is available, and falls back to the built-in simulator if a live turn fails.
 - Broadcasts live snapshots and event logs over Socket.IO.
-- Visualizes the office as a retro pixel workspace with animated task packets between desks.
+- Visualizes the office as a retro pixel workspace with animated task packets, walking lobster agents, and idle lounge behaviors like cards, mahjong, arcade, and naps.
 - Shows workflow queue state, task ownership, final output, metrics, and agent-to-agent messages.
 - Polls `openclaw status --usage --json` to display real OpenClaw provider quota, recent session token usage, cache reads, and gateway reachability.
 - Integrates ClawHub search, inspect, install, update, and uninstall flows so you can manage skills from the dashboard.
@@ -48,9 +49,15 @@ This starts:
 - Backend gateway on `http://localhost:8787`
 - Frontend dashboard on `http://localhost:5173`
 
-The backend seeds demo workflows automatically a few seconds after boot so the office starts moving immediately.
+By default the dashboard starts clean so you can type a real task into Mission Control right away.
 
-If the `openclaw` CLI is installed on the host, the dashboard also pulls live usage data from your local OpenClaw environment every 60 seconds.
+If the `openclaw` CLI is installed and configured on the host, workflow steps are executed through real OpenClaw agent turns and the dashboard also pulls live usage data every 60 seconds.
+
+If you want the old auto-demo behavior back for presentations, start the server with:
+
+```bash
+CLAWCONTROL_BOOTSTRAP_DEMOS=true npm run dev
+```
 
 ## Production build
 
@@ -108,7 +115,7 @@ Task states move through:
 
 The dashboard now exposes two usage layers:
 
-- Workflow estimates: each simulated task and workflow includes estimated token usage so you can compare relative workload between desks.
+- Workflow usage: each task and workflow shows token usage. When a live OpenClaw turn succeeds, the task usage is populated from reported `lastCallUsage`; when it fails or OpenClaw is unavailable, the app falls back to estimated usage.
 - Real OpenClaw usage: the server polls `openclaw status --usage --json` and surfaces:
   - provider quota windows
   - recent session `inputTokens`, `outputTokens`, `cacheRead`, and `totalTokens`

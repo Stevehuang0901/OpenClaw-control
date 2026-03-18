@@ -4,6 +4,7 @@ import { io } from "socket.io-client";
 import { AgentRoster } from "./components/AgentRoster";
 import { EventFeed } from "./components/EventFeed";
 import { MetricStrip } from "./components/MetricStrip";
+import { MissionControlPanel } from "./components/MissionControlPanel";
 import { OpenClawUsagePanel } from "./components/OpenClawUsagePanel";
 import { SkillMarketplacePanel } from "./components/SkillMarketplacePanel";
 import { OfficeScene } from "./components/OfficeScene";
@@ -61,6 +62,7 @@ export default function App() {
   const [snapshot, setSnapshot] = useState<SystemSnapshot>(emptySnapshot);
   const [events, setEvents] = useState<GatewayEvent[]>([]);
   const [prompt, setPrompt] = useState(starterPrompt);
+  const [selectedWorkflowId, setSelectedWorkflowId] = useState<string | null>(null);
   const [connected, setConnected] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -96,9 +98,14 @@ export default function App() {
 
     void loadInitialState();
 
-    const socket = io({
-      transports: ["websocket"]
-    });
+    const socket =
+      window.location.port === "5173"
+        ? io(`${window.location.protocol}//${window.location.hostname}:8787`, {
+            transports: ["websocket"]
+          })
+        : io({
+            transports: ["websocket"]
+          });
 
     socket.on("connect", () => {
       setConnected(true);
@@ -126,6 +133,22 @@ export default function App() {
     };
   }, []);
 
+  useEffect(() => {
+    if (snapshot.workflows.length === 0) {
+      if (selectedWorkflowId !== null) {
+        setSelectedWorkflowId(null);
+      }
+      return;
+    }
+
+    if (
+      !selectedWorkflowId ||
+      !snapshot.workflows.some((workflow) => workflow.id === selectedWorkflowId)
+    ) {
+      setSelectedWorkflowId(snapshot.workflows[0].id);
+    }
+  }, [selectedWorkflowId, snapshot.workflows]);
+
   const submitWorkflow = async (nextPrompt: string) => {
     setSubmitting(true);
     setError(null);
@@ -145,6 +168,8 @@ export default function App() {
         throw new Error("The gateway rejected the workflow request.");
       }
 
+      const workflow = (await response.json()) as { id: string };
+      setSelectedWorkflowId(workflow.id);
       setPrompt("");
     } catch (submitError) {
       setError(
@@ -159,99 +184,75 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,#fff5de_0%,#f7ecd8_34%,#e0cfb3_100%)] px-4 py-6 text-ink sm:px-6 lg:px-8">
-      <div className="mx-auto flex max-w-7xl flex-col gap-6">
-        <header className="panel p-5">
-          <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-            <div className="max-w-2xl">
-              <p className="pixel-label">ClawControl</p>
-              <h1 className="mt-3 text-4xl font-bold tracking-tight text-ink sm:text-5xl">
-                Multi-agent office for OpenClaw-style workflows
-              </h1>
-              <p className="mt-4 text-base leading-relaxed text-ink/75">
-                A central gateway routes role-based tasks across collector,
-                analyzer, writer, and validator desks while the dashboard renders
-                handoffs in real time.
-              </p>
-            </div>
-
-            <div className="min-w-[280px] rounded-none border-2 border-ink bg-paper p-4 shadow-pixel">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-xs uppercase tracking-[0.25em] text-ink/55">
-                  Gateway link
-                </p>
-                <span
-                  className={`rounded-none border-2 border-ink px-2 py-1 text-[10px] uppercase tracking-[0.2em] ${
-                    connected ? "bg-mint/40 text-ink" : "bg-coral/20 text-coral"
-                  }`}
-                >
-                  {connected ? "Connected" : "Disconnected"}
-                </span>
-              </div>
-              <p className="mt-3 text-sm text-ink/75">
-                Submit a request and watch the office desks split the work,
-                exchange packets, and validate the final product.
-              </p>
-            </div>
+      <div className="mx-auto flex max-w-[1500px] flex-col gap-6">
+        <header className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+          <div className="max-w-3xl">
+            <p className="pixel-label">ClawControl</p>
+            <h1 className="mt-3 text-4xl font-bold tracking-tight text-ink sm:text-5xl">
+              OpenClaw mission control with a chaotic little crustacean office
+            </h1>
+            <p className="mt-4 text-base leading-relaxed text-ink/75">
+              Submit work, watch the desks collaborate in real time, inspect
+              token and skill data, and see the final delivery appear without
+              leaving the dashboard.
+            </p>
           </div>
 
-          <form
-            className="mt-6 grid gap-4 xl:grid-cols-[1fr_auto]"
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (!prompt.trim() || submitting) {
-                return;
-              }
-
-              void submitWorkflow(prompt);
-            }}
-          >
-            <label className="sr-only" htmlFor="workflow-prompt">
-              Workflow prompt
-            </label>
-            <textarea
-              id="workflow-prompt"
-              value={prompt}
-              onChange={(event) => setPrompt(event.target.value)}
-              className="min-h-[108px] rounded-none border-2 border-ink bg-white/80 px-4 py-3 text-base leading-relaxed text-ink shadow-pixel outline-none transition focus:border-teal"
-              placeholder="Describe the product you want the agents to deliver..."
-            />
-            <div className="flex flex-col gap-3">
-              <button
-                type="submit"
-                className="rounded-none border-2 border-ink bg-teal px-5 py-4 text-sm font-bold uppercase tracking-[0.2em] text-paper shadow-pixel transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:bg-slate disabled:text-white/70"
-                disabled={submitting || !prompt.trim()}
+          <div className="rounded-none border-2 border-ink bg-paper/90 px-4 py-3 shadow-pixel">
+            <p className="text-[10px] uppercase tracking-[0.24em] text-ink/55">
+              Office pulse
+            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-ink/70">
+              <span
+                className={`rounded-none border-2 border-ink px-2 py-1 text-[10px] uppercase tracking-[0.18em] ${
+                  connected ? "bg-mint/30 text-ink" : "bg-coral/20 text-coral"
+                }`}
               >
-                {submitting ? "Routing..." : "Dispatch workflow"}
-              </button>
-              <button
-                type="button"
-                className="rounded-none border-2 border-ink bg-paper px-5 py-4 text-sm font-bold uppercase tracking-[0.2em] text-ink shadow-pixel transition hover:-translate-y-0.5"
-                onClick={() => setPrompt(starterPrompt)}
-              >
-                Use starter brief
-              </button>
+                {connected ? "Gateway live" : "Gateway offline"}
+              </span>
+              <span>{snapshot.metrics.runningWorkflows} running</span>
+              <span>{snapshot.metrics.completedWorkflows} shipped</span>
             </div>
-          </form>
-
-          {error ? (
-            <div className="mt-4 rounded-none border-2 border-coral bg-coral/15 px-4 py-3 text-sm text-coral">
-              {error}
-            </div>
-          ) : null}
+          </div>
         </header>
+
+        <MissionControlPanel
+          connected={connected}
+          error={error}
+          messages={snapshot.messages}
+          prompt={prompt}
+          selectedWorkflowId={selectedWorkflowId}
+          submitting={submitting}
+          workflows={snapshot.workflows}
+          onPromptChange={setPrompt}
+          onRestoreStarter={() => setPrompt(starterPrompt)}
+          onSelectWorkflow={setSelectedWorkflowId}
+          onSubmit={() => {
+            void submitWorkflow(prompt);
+          }}
+        />
 
         <MetricStrip metrics={snapshot.metrics} />
 
-        <div className="grid gap-6 xl:grid-cols-[1.45fr_0.95fr]">
+        <OfficeScene
+          agents={snapshot.agents}
+          workflows={snapshot.workflows}
+          handoffs={snapshot.handoffs}
+          messages={snapshot.messages}
+        />
+
+        <div className="grid gap-6 xl:grid-cols-[1.25fr_0.95fr]">
           <div className="space-y-6">
-            <OfficeScene
-              agents={snapshot.agents}
-              workflows={snapshot.workflows}
-              handoffs={snapshot.handoffs}
-            />
             <WorkflowPanel
               workflows={snapshot.workflows}
               agents={snapshot.agents}
+              selectedWorkflowId={selectedWorkflowId}
+              onSelectWorkflow={setSelectedWorkflowId}
+            />
+            <EventFeed
+              agents={snapshot.agents}
+              events={events}
+              messages={snapshot.messages}
             />
           </div>
 
@@ -259,14 +260,10 @@ export default function App() {
             <AgentRoster
               agents={snapshot.agents}
               workflows={snapshot.workflows}
+              handoffs={snapshot.handoffs}
             />
             <OpenClawUsagePanel openclaw={snapshot.openclaw} />
             <SkillMarketplacePanel />
-            <EventFeed
-              agents={snapshot.agents}
-              events={events}
-              messages={snapshot.messages}
-            />
           </div>
         </div>
       </div>

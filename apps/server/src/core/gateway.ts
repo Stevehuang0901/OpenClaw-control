@@ -23,6 +23,21 @@ type SnapshotListener = (snapshot: SystemSnapshot) => void;
 interface GatewayOptions {
   durationMultiplier?: number;
   handoffDurationMs?: number;
+  executor?: TaskExecutor | null;
+}
+
+export interface TaskExecutionResult {
+  output: string;
+  usage: TokenUsage | null;
+  note?: string | null;
+}
+
+export interface TaskExecutor {
+  runTask(input: {
+    workflow: WorkflowRecord;
+    task: TaskRecord;
+    agent: AgentRecord;
+  }): Promise<TaskExecutionResult>;
 }
 
 const workflowBlueprint: Array<{
@@ -63,7 +78,11 @@ export class Gateway {
   private readonly snapshotListeners = new Set<SnapshotListener>();
   private readonly timers = new Set<ReturnType<typeof setTimeout>>();
 
-  private readonly options: Required<GatewayOptions>;
+  private readonly options: {
+    durationMultiplier: number;
+    handoffDurationMs: number;
+    executor: TaskExecutor | null;
+  };
 
   private messages: MessageRecord[] = [];
   private handoffs: HandoffRecord[] = [];
@@ -77,7 +96,8 @@ export class Gateway {
 
     this.options = {
       durationMultiplier: options?.durationMultiplier ?? 1,
-      handoffDurationMs: options?.handoffDurationMs ?? 1400
+      handoffDurationMs: options?.handoffDurationMs ?? 1400,
+      executor: options?.executor ?? null
     };
   }
 
@@ -272,6 +292,11 @@ export class Gateway {
       status: "in_progress"
     });
 
+    if (this.options.executor) {
+      void this.executeTask(workflowId, taskId, agentId);
+      return;
+    }
+
     const duration = this.resolveTaskDuration(task.role);
     const timer = setTimeout(() => {
       this.completeTask(workflowId, taskId, agentId);
@@ -280,7 +305,45 @@ export class Gateway {
     this.timers.add(timer);
   }
 
-  private completeTask(workflowId: string, taskId: string, agentId: string) {
+  private async executeTask(workflowId: string, taskId: string, agentId: string) {
+    const workflow = this.workflows.get(workflowId);
+    const agent = this.agents.get(agentId);
+
+    if (!workflow || !agent || !this.options.executor) {
+      return;
+    }
+
+    const task = workflow.tasks.find((entry) => entry.id === taskId);
+    if (!task || task.status !== "in_progress") {
+      return;
+    }
+
+    try {
+      const result = await this.options.executor.runTask({
+        workflow: structuredClone(workflow),
+        task: structuredClone(task),
+        agent: structuredClone(agent)
+      });
+
+      this.completeTask(workflowId, taskId, agentId, result);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "OpenClaw execution failed.";
+
+      this.completeTask(workflowId, taskId, agentId, {
+        output: this.generateTaskOutput(workflow, task),
+        usage: this.estimateTaskUsage(workflow, task),
+        note: `Fell back to the built-in simulator after OpenClaw failed: ${message}`
+      });
+    }
+  }
+
+  private completeTask(
+    workflowId: string,
+    taskId: string,
+    agentId: string,
+    execution?: TaskExecutionResult
+  ) {
     const workflow = this.workflows.get(workflowId);
     const agent = this.agents.get(agentId);
 
@@ -296,12 +359,17 @@ export class Gateway {
     const completedAt = timestamp();
     task.status = "done";
     task.completedAt = completedAt;
-    task.output = this.generateTaskOutput(workflow, task);
-    task.usage = this.estimateTaskUsage(workflow, task);
+    task.output = execution?.output ?? this.generateTaskOutput(workflow, task);
+    task.usage = execution?.usage ?? this.estimateTaskUsage(workflow, task);
     task.history.push(
       this.buildHistoryEntry(
         "done",
-        `${agent.name} finished the ${task.role} step and prepared a payload.`,
+        [
+          `${agent.name} finished the ${task.role} step and prepared a payload.`,
+          execution?.note ?? null
+        ]
+          .filter(Boolean)
+          .join(" "),
         agent.id,
         completedAt
       )
@@ -447,7 +515,10 @@ export class Gateway {
 
     workflow.status = "completed";
     workflow.updatedAt = completedAt;
-    workflow.finalOutput = this.generateFinalOutput(workflow);
+    workflow.finalOutput =
+      task.usage?.source === "reported" && task.output
+        ? task.output
+        : this.generateFinalOutput(workflow);
     workflow.usage = this.aggregateWorkflowUsage(workflow);
 
     agent.status = "idle";

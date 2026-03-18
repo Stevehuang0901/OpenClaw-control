@@ -6,6 +6,7 @@ import express from "express";
 import { Server } from "socket.io";
 
 import { buildGateway } from "./core/gateway";
+import { createOpenClawTaskExecutor } from "./core/openclawExecutor";
 import { fetchOpenClawStatus } from "./core/openclawMonitor";
 import {
   getCatalogSkillDetail,
@@ -19,7 +20,9 @@ import {
 } from "./core/skillManager";
 import { seedAgents } from "./data/seedAgents";
 
-const gateway = buildGateway(seedAgents());
+const gateway = buildGateway(seedAgents(), {
+  executor: createOpenClawTaskExecutor()
+});
 const app = express();
 
 app.use(
@@ -223,7 +226,9 @@ gateway.subscribe(
 
 const port = Number(process.env.PORT ?? 8787);
 server.listen(port, () => {
-  gateway.bootstrapDemo();
+  if (process.env.CLAWCONTROL_BOOTSTRAP_DEMOS === "true") {
+    gateway.bootstrapDemo();
+  }
   void refreshOpenClawStatus();
   setInterval(() => {
     void refreshOpenClawStatus();
