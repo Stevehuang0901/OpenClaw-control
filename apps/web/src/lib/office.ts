@@ -8,16 +8,23 @@ import type {
 export type ScenePose =
   | "cards"
   | "mahjong"
-  | "arcade"
+  | "coffee"
   | "sleep"
   | "working"
   | "handoff";
+
+export type SceneFacing = "left" | "right" | "front";
+export type SceneRoom = "work" | "cards" | "coffee" | "nap" | "mahjong";
 
 interface IdleActivitySlot {
   key: string;
   x: number;
   y: number;
+  room: SceneRoom;
+  roomX: number;
+  roomY: number;
   pose: ScenePose;
+  facing: SceneFacing;
   label: string;
   detail: string;
 }
@@ -26,59 +33,87 @@ export interface AgentSceneState {
   x: number;
   y: number;
   pose: ScenePose;
+  facing: SceneFacing;
   bubble: string | null;
   activityLabel: string;
   activityDetail: string;
+  room?: SceneRoom;
+  roomX?: number;
+  roomY?: number;
 }
 
 const idleActivitySlots: IdleActivitySlot[] = [
   {
     key: "cards-west",
-    x: 20,
-    y: 83,
+    x: 18,
+    y: 79,
+    room: "cards",
+    roomX: 32,
+    roomY: 16,
     pose: "cards",
-    label: "Cards table",
-    detail: "Playing cards on standby until a new request lands."
+    facing: "right",
+    label: "Cards club",
+    detail: "Playing a quick hand in the game room until a new request lands."
   },
   {
     key: "cards-east",
-    x: 30,
-    y: 83,
+    x: 26,
+    y: 79,
+    room: "cards",
+    roomX: 64,
+    roomY: 16,
     pose: "cards",
-    label: "Cards table",
-    detail: "Shuffling another hand while the queue stays quiet."
+    facing: "left",
+    label: "Cards club",
+    detail: "Shuffling another hand in the game room while the queue stays quiet."
   },
   {
-    key: "arcade",
-    x: 49,
-    y: 82,
-    pose: "arcade",
-    label: "Arcade cabinet",
-    detail: "Camping by the arcade machine with one eye on the gateway."
+    key: "coffee-bar",
+    x: 43,
+    y: 77,
+    room: "coffee",
+    roomX: 54,
+    roomY: 14,
+    pose: "coffee",
+    facing: "right",
+    label: "Tea pantry",
+    detail: "Taking a quick tea and coffee reset while the queue stays quiet."
   },
   {
     key: "sleep",
-    x: 61,
-    y: 70,
+    x: 63,
+    y: 78,
+    room: "nap",
+    roomX: 56,
+    roomY: 20,
     pose: "sleep",
-    label: "Nap nook",
-    detail: "Taking a quick beanbag nap until the next task arrives."
+    facing: "left",
+    label: "Nap pod",
+    detail: "Taking a quick recharge in the quiet suite until the next task arrives."
   },
   {
     key: "mahjong-west",
-    x: 76,
-    y: 83,
+    x: 82,
+    y: 79,
+    room: "mahjong",
+    roomX: 34,
+    roomY: 16,
     pose: "mahjong",
-    label: "Mahjong table",
-    detail: "Playing a fast round of mahjong while the office is idle."
+    facing: "right",
+    label: "Mahjong den",
+    detail: "Playing a fast round of mahjong in the play room while the office is idle."
   },
   {
     key: "mahjong-east",
-    x: 86,
-    y: 83,
+    x: 88,
+    y: 79,
+    room: "mahjong",
+    roomX: 74,
+    roomY: 16,
     pose: "mahjong",
-    label: "Mahjong table",
-    detail: "Keeping the mahjong game moving until the gateway rings."
+    facing: "left",
+    label: "Mahjong den",
+    detail: "Keeping the mahjong table moving in the play room until the gateway rings."
   }
 ];
 
@@ -87,7 +122,8 @@ export const resolveAgentSceneState = (
   index: number,
   task: TaskRecord | null,
   handoffs: HandoffRecord[],
-  agents: AgentRecord[]
+  agents: AgentRecord[],
+  motionTick = 0
 ): AgentSceneState => {
   const agentById = new Map(agents.map((entry) => [entry.id, entry]));
   const outgoingHandoff =
@@ -100,11 +136,13 @@ export const resolveAgentSceneState = (
       x: agent.desk.x,
       y: agent.desk.y + 9,
       pose: "working",
+      facing: "front",
       bubble: task ? `On it: ${task.title}` : "Reviewing queue",
       activityLabel: "At desk",
       activityDetail: task
         ? `${task.title} is underway at the ${roleMeta[agent.role].label.toLowerCase()} desk.`
-        : `${roleMeta[agent.role].label} is monitoring the queue for the next assignment.`
+        : `${roleMeta[agent.role].label} is monitoring the queue for the next assignment.`,
+      room: "work"
     };
   }
 
@@ -118,9 +156,14 @@ export const resolveAgentSceneState = (
         interpolate(agent.desk.y, agentById.get(outgoingHandoff.toAgentId)?.desk.y, 0.42) +
         10,
       pose: "handoff",
+      facing:
+        (agentById.get(outgoingHandoff.toAgentId)?.desk.x ?? agent.desk.x) >= agent.desk.x
+          ? "right"
+          : "left",
       bubble: `Packet to ${recipient}!`,
       activityLabel: "In transit",
-      activityDetail: `Passing a finished packet over to ${recipient}.`
+      activityDetail: `Passing a finished packet over to ${recipient}.`,
+      room: "work"
     };
   }
 
@@ -134,20 +177,30 @@ export const resolveAgentSceneState = (
         interpolate(agent.desk.y, agentById.get(incomingHandoff.fromAgentId)?.desk.y, 0.18) +
         9,
       pose: "handoff",
+      facing:
+        (agentById.get(incomingHandoff.fromAgentId)?.desk.x ?? agent.desk.x) >= agent.desk.x
+          ? "right"
+          : "left",
       bubble: `Incoming from ${sender}!`,
       activityLabel: "Packet intake",
-      activityDetail: `Waiting for ${sender} to finish the handoff and open the next step.`
+      activityDetail: `Waiting for ${sender} to finish the handoff and open the next step.`,
+      room: "work"
     };
   }
 
-  const slot = idleActivitySlots[index % idleActivitySlots.length];
+  const idlePhase = Math.floor(motionTick / 7000);
+  const slot = idleActivitySlots[(index + idlePhase) % idleActivitySlots.length];
   return {
     x: slot.x,
     y: slot.y,
     pose: slot.pose,
+    facing: slot.facing,
     bubble: null,
     activityLabel: slot.label,
-    activityDetail: slot.detail
+    activityDetail: slot.detail,
+    room: slot.room,
+    roomX: slot.roomX,
+    roomY: slot.roomY
   };
 };
 

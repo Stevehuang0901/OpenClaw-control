@@ -8,14 +8,12 @@ import { GatewayOpsPanel } from "./components/GatewayOpsPanel";
 import { MetricStrip } from "./components/MetricStrip";
 import { MissionControlPanel } from "./components/MissionControlPanel";
 import { OpenClawUsagePanel } from "./components/OpenClawUsagePanel";
-import { OfficeStoryPanel } from "./components/OfficeStoryPanel";
 import { OverviewDeck } from "./components/OverviewDeck";
 import {
   OperationsSidebar,
   type DashboardPage
 } from "./components/OperationsSidebar";
 import { SkillMarketplacePanel } from "./components/SkillMarketplacePanel";
-import { CollaborationPanel } from "./components/CollaborationPanel";
 import { OfficeScene } from "./components/OfficeScene";
 import { TaskBoardPanel } from "./components/TaskBoardPanel";
 import { WorkflowPanel } from "./components/WorkflowPanel";
@@ -69,7 +67,7 @@ const emptySnapshot: SystemSnapshot = {
   }
 };
 
-const starterPrompt =
+const samplePrompt =
   "Build a full OpenClaw-style multi-agent system with a dark pixel office, playful idle animations, approvals, token tracking, and a final delivery output.";
 
 const pageMeta: Record<
@@ -117,7 +115,7 @@ const pageMeta: Record<
 export default function App() {
   const [snapshot, setSnapshot] = useState<SystemSnapshot>(emptySnapshot);
   const [events, setEvents] = useState<GatewayEvent[]>([]);
-  const [prompt, setPrompt] = useState(starterPrompt);
+  const [prompt, setPrompt] = useState("");
   const [selectedWorkflowId, setSelectedWorkflowId] = useState<string | null>(null);
   const [activePage, setActivePage] = useState<DashboardPage>(() =>
     typeof window === "undefined" ? defaultPage : resolvePage(window.location.hash)
@@ -272,7 +270,7 @@ export default function App() {
     snapshot,
     submitting,
     onPromptChange: setPrompt,
-    onRestoreStarter: () => setPrompt(starterPrompt),
+    onRestoreStarter: () => setPrompt(samplePrompt),
     onSelectWorkflow: setSelectedWorkflowId,
     onSubmit: () => {
       void submitWorkflow(prompt);
@@ -281,7 +279,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#09070d] px-3 py-4 text-ink sm:px-4 lg:px-5">
-      <div className="mx-auto grid max-w-[1700px] gap-6 lg:grid-cols-[252px_minmax(0,1fr)]">
+      <div className="mx-auto grid max-w-[1720px] gap-5 lg:grid-cols-[252px_minmax(0,1fr)]">
         <OperationsSidebar
           activePage={activePage}
           approvals={snapshot.approvals}
@@ -292,59 +290,44 @@ export default function App() {
           onSelectPage={navigateToPage}
         />
 
-        <main className={isOfficePage ? "space-y-4" : "space-y-6"}>
-          <header className="panel overflow-hidden">
-            <div
-              className={`grid gap-5 px-5 py-5 ${
-                isOfficePage
-                  ? "xl:grid-cols-[1.15fr_0.85fr]"
-                  : "xl:grid-cols-[1.1fr_0.9fr]"
-              }`}
-            >
-              <div>
-                <p className="pixel-label">{hero.kicker}</p>
-                <h1
-                  className={`mt-3 font-bold tracking-tight text-ink ${
-                    isOfficePage ? "text-3xl sm:text-4xl" : "text-4xl sm:text-5xl"
-                  }`}
-                >
-                  {hero.title}
-                </h1>
-                <p
-                  className={`mt-4 max-w-4xl leading-relaxed text-ink/70 ${
-                    isOfficePage ? "text-sm" : "text-base"
-                  }`}
-                >
-                  {hero.description}
-                </p>
-              </div>
+        <main className={isOfficePage ? "space-y-3" : "space-y-6"}>
+          {isOfficePage ? null : (
+            <header className="panel overflow-hidden">
+              <div className="grid gap-5 px-5 py-5 xl:grid-cols-[1.1fr_0.9fr]">
+                <div>
+                  <p className="pixel-label">{hero.kicker}</p>
+                  <h1 className="mt-3 text-4xl font-bold tracking-tight text-ink sm:text-5xl">
+                    {hero.title}
+                  </h1>
+                  <p className="mt-4 max-w-4xl text-base leading-relaxed text-ink/70">
+                    {hero.description}
+                  </p>
+                </div>
 
-              <div className="grid gap-3 sm:grid-cols-3">
-                <HeaderCard
-                  label="Gateway"
-                  value={connected ? "online" : "offline"}
-                  note={`${snapshot.metrics.runningWorkflows} workflows moving`}
-                  compact={isOfficePage}
-                />
-                <HeaderCard
-                  label="Approvals"
-                  value={String(snapshot.metrics.pendingApprovals)}
-                  note="Release packages waiting"
-                  compact={isOfficePage}
-                />
-                <HeaderCard
-                  label="OpenClaw"
-                  value={snapshot.openclaw.available ? "live" : "cold"}
-                  note={
-                    snapshot.openclaw.gateway.reachable
-                      ? "Gateway reachable"
-                      : "Probe recommended"
-                  }
-                  compact={isOfficePage}
-                />
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <HeaderCard
+                    label="Gateway"
+                    value={connected ? "online" : "offline"}
+                    note={`${snapshot.metrics.runningWorkflows} workflows moving`}
+                  />
+                  <HeaderCard
+                    label="Approvals"
+                    value={String(snapshot.metrics.pendingApprovals)}
+                    note="Release packages waiting"
+                  />
+                  <HeaderCard
+                    label="OpenClaw"
+                    value={snapshot.openclaw.available ? "live" : "cold"}
+                    note={
+                      snapshot.openclaw.gateway.reachable
+                        ? "Gateway reachable"
+                        : "Probe recommended"
+                    }
+                  />
+                </div>
               </div>
-            </div>
-          </header>
+            </header>
+          )}
 
           {content}
         </main>
@@ -417,7 +400,7 @@ function renderPageContent(input: {
   switch (activePage) {
     case "office":
       return (
-        <div className="space-y-6">
+        <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(360px,420px)]">
           <OfficeScene
             agents={snapshot.agents}
             approvals={snapshot.approvals}
@@ -437,27 +420,6 @@ function renderPageContent(input: {
             onPromptChange={onPromptChange}
             onRestoreStarter={onRestoreStarter}
             onSubmit={onSubmit}
-          />
-
-          <div className="grid gap-6 xl:grid-cols-[1.02fr_0.98fr]">
-            <OfficeStoryPanel
-              agents={snapshot.agents}
-              approvals={snapshot.approvals}
-              selectedWorkflowId={selectedWorkflowId}
-              workflows={snapshot.workflows}
-            />
-            <CollaborationPanel
-              agents={snapshot.agents}
-              messages={snapshot.messages}
-              selectedWorkflowId={selectedWorkflowId}
-              workflows={snapshot.workflows}
-            />
-          </div>
-
-          <AgentRoster
-            agents={snapshot.agents}
-            workflows={snapshot.workflows}
-            handoffs={snapshot.handoffs}
           />
         </div>
       );
@@ -545,6 +507,23 @@ function renderPageContent(input: {
     default:
       return null;
   }
+}
+
+function HeaderPill({
+  label,
+  value
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-none border-2 border-ink/12 bg-[#15101d] px-3 py-2 shadow-pixel">
+      <p className="text-[9px] uppercase tracking-[0.22em] text-ink/46">{label}</p>
+      <p className="mt-1 text-sm font-bold uppercase tracking-[0.08em] text-ink">
+        {value}
+      </p>
+    </div>
+  );
 }
 
 function resolvePage(hash: string): DashboardPage {

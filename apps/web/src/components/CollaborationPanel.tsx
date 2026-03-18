@@ -31,28 +31,20 @@ export function CollaborationPanel({
 
   return (
     <section className="panel p-5">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="pixel-label">Collaboration</p>
-          <h2 className="mt-2 text-2xl font-bold text-ink">Desk radio</h2>
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink/66">
-            Short desk-to-desk notes for the current mission. The full ops
-            timeline still lives on Activity.
-          </p>
+          <p className="pixel-label">Desk Radio</p>
+          <h2 className="mt-2 text-xl font-bold text-ink">Live collaboration feed</h2>
         </div>
-        <div className="rounded-none border-2 border-ink/15 bg-[#15101d] px-4 py-3 shadow-pixel">
-          <p className="text-[10px] uppercase tracking-[0.24em] text-ink/48">Focus</p>
-          <p className="mt-2 text-sm text-ink/72">
-            {focusWorkflow ? focusWorkflow.summary : "No mission selected"}
-          </p>
-        </div>
+        <span className="rounded-none border-2 border-ink/15 bg-[#15101d] px-3 py-2 text-[10px] uppercase tracking-[0.2em] text-ink/62 shadow-pixel">
+          {notes.length} live notes
+        </span>
       </div>
 
-      <div className="mt-5 space-y-3">
+      <div className="mt-4 space-y-2">
         {notes.length === 0 ? (
           <div className="rounded-none border-2 border-dashed border-ink/15 bg-[#110d18] p-4 text-sm text-ink/58">
-            No collaboration notes yet. Submit a request and the crew radio will
-            start showing handoffs, results, and desk updates here.
+            No desk radio traffic yet.
           </div>
         ) : null}
 
@@ -64,19 +56,12 @@ export function CollaborationPanel({
               key={message.id}
               className="rounded-none border-2 border-ink/15 bg-[#14101c] p-3 shadow-pixel"
             >
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-none border-2 border-ink/15 bg-[#0f0c15] px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-ink/52">
-                      {message.kind}
-                    </span>
-                    {task ? (
-                      <span className="text-[10px] uppercase tracking-[0.18em] text-ink/44">
-                        {task.title}
-                      </span>
-                    ) : null}
-                  </div>
-                  <p className="mt-3 text-sm font-bold text-ink">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="rounded-none border-2 border-ink/15 bg-[#0f0c15] px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-ink/52">
+                    {message.kind}
+                  </span>
+                  <p className="text-sm font-bold text-ink">
                     {agentById.get(message.fromAgentId) ?? "Gateway"} to{" "}
                     {agentById.get(message.toAgentId) ?? "Gateway"}
                   </p>
@@ -86,9 +71,14 @@ export function CollaborationPanel({
                 </span>
               </div>
 
-              <p className="mt-3 text-sm leading-relaxed text-ink/74">
-                {truncate(message.payload, 150)}
+              <p className="mt-2 text-sm leading-relaxed text-ink/74">
+                {truncate(message.payload, 180)}
               </p>
+              {task ? (
+                <p className="mt-2 text-[10px] uppercase tracking-[0.18em] text-ink/42">
+                  {task.title}
+                </p>
+              ) : null}
             </article>
           );
         })}

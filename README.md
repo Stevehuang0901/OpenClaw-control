@@ -8,7 +8,7 @@ ClawControl is a full end-to-end multi-agent control room built for OpenClaw-sty
 - Routes multiple role-based desks: collector, analyzer, writer, and validator.
 - Uses `openclaw agent --local --agent main --json` to generate real task packets when the local CLI is available, and falls back to the built-in simulator if a live turn fails.
 - Broadcasts live snapshots and event logs over Socket.IO.
-- Visualizes the office as a retro pixel night-shift workspace with animated task packets, walking lobster agents, idle lounge behaviors like cards, mahjong, arcade, and naps, plus clearer walk paths, louder collaboration bubbles, and approval celebration effects.
+- Visualizes the office as a game-like floorplan instead of a flat stage: a main work floor sits beside separate break rooms, with animated lobster agents moving inside dedicated spaces for cards, tea and coffee, naps, and mahjong while task packets continue to flow across the office.
 - Splits the UI into a cleaner multi-page dashboard shell: the Office page is the live workspace, while dashboard, activity, approvals, operations, and skills each live on their own page.
 - Adds explanation layers so the UI is easier to read: the Dashboard page now has a stronger overview deck, the Office page includes a narrative panel for the current mission, and the Activity page is presented as an operations timeline.
 - Shows workflow queue state, task ownership, kanban board state, final output, metrics, approvals, and agent-to-agent messages without forcing every panel onto one long screen.
@@ -55,6 +55,18 @@ This starts:
 By default the dashboard starts clean so you can type a real task into Mission Control right away.
 
 The UI is fully dark-themed and keeps the retro pixel look throughout the mission input, office scene, workflow board, approvals desk, gateway tools, token panels, and skill marketplace.
+
+## Office map scene
+
+The Office page is designed as a playable-looking office map rather than a single flat animation layer. The center scene is split into distinct rooms so activities happen in believable places instead of floating on top of the UI.
+
+- `Work floor`: the live production room, with six desks, task packets moving between roles, and the active mission highlighted in the room itself.
+- `Refill bar`: a dedicated tea and coffee pantry with a counter, coffee machine, shelf, and fridge for idle recharge moments.
+- `Cards club`: a separate game room where idle agents can gather around a card table.
+- `Nap pod`: a quiet suite with a bed and side lighting for short recovery animations.
+- `Mahjong den`: a separate play room with its own table, chairs, and tile setup.
+
+The lobster agents are rendered inside those rooms so the animation reads more like a small game map or dollhouse office layout, while the right-side Mission Control and output panels stay focused on the currently running workflow.
 
 If the `openclaw` CLI is installed and configured on the host, workflow steps are executed through real OpenClaw agent turns and the dashboard also pulls live usage data every 60 seconds.
 
