@@ -5,6 +5,7 @@ import { resolveAgentSceneState } from "../lib/office";
 import { roleMeta } from "../types/contracts";
 import type {
   AgentRecord,
+  ApprovalRecord,
   HandoffRecord,
   MessageRecord,
   TaskRecord,
@@ -13,6 +14,7 @@ import type {
 
 interface OfficeSceneProps {
   agents: AgentRecord[];
+  approvals: ApprovalRecord[];
   workflows: WorkflowRecord[];
   handoffs: HandoffRecord[];
   messages: MessageRecord[];
@@ -20,6 +22,7 @@ interface OfficeSceneProps {
 
 export function OfficeScene({
   agents,
+  approvals,
   workflows,
   handoffs,
   messages
@@ -27,6 +30,23 @@ export function OfficeScene({
   const tasks = workflows.flatMap((workflow) => workflow.tasks);
   const taskById = new Map(tasks.map((task) => [task.id, task]));
   const agentById = new Map(agents.map((agent) => [agent.id, agent]));
+  const latestApproved =
+    [...approvals]
+      .filter((approval) => approval.status === "approved" && approval.decidedAt)
+      .sort((left, right) =>
+        (right.decidedAt ?? "").localeCompare(left.decidedAt ?? "")
+      )[0] ?? null;
+  const celebrationWorkflow = latestApproved
+    ? workflows.find((workflow) => workflow.id === latestApproved.workflowId) ?? null
+    : null;
+  const celebrationTask =
+    latestApproved && celebrationWorkflow
+      ? celebrationWorkflow.tasks.find((task) => task.id === latestApproved.taskId) ?? null
+      : null;
+  const celebrationAgent =
+    celebrationTask?.ownerAgentId
+      ? agentById.get(celebrationTask.ownerAgentId) ?? null
+      : agents.find((agent) => agent.role === "validator") ?? null;
   const activeRequests = workflows.filter(
     (workflow) => workflow.status !== "completed"
   ).length;
@@ -60,6 +80,12 @@ export function OfficeScene({
         <div className="office-window office-window-right" />
         <div className="office-floor-path office-floor-path-top" />
         <div className="office-floor-path office-floor-path-bottom" />
+        <div className="office-route office-route-main" />
+        <div className="office-route office-route-collector" />
+        <div className="office-route office-route-analyzer" />
+        <div className="office-route office-route-validator" />
+        <div className="office-route office-route-lounge-left" />
+        <div className="office-route office-route-lounge-right" />
         <div className="office-lounge-sign">Idle mode lounge</div>
         <div className="office-rug" />
         <div className="office-card-table" />
@@ -69,6 +95,29 @@ export function OfficeScene({
         <div className="office-beanbag" />
         <div className="office-plant office-plant-left" />
         <div className="office-plant office-plant-right" />
+        {celebrationAgent && latestApproved ? (
+          <>
+            <div className="office-approval-banner">
+              Approved: {truncate(latestApproved.title, 42)}
+            </div>
+            <div
+              className="office-celebration"
+              style={
+                {
+                  left: `${celebrationAgent.desk.x}%`,
+                  top: `${celebrationAgent.desk.y + 6}%`
+                } as CSSProperties
+              }
+            >
+              {Array.from({ length: 10 }).map((_, index) => (
+                <span
+                  key={`spark-${index}`}
+                  className={`office-spark office-spark-${(index % 5) + 1}`}
+                />
+              ))}
+            </div>
+          </>
+        ) : null}
 
         {agents.map((agent) => {
           const activeTask =
@@ -156,6 +205,12 @@ export function OfficeScene({
               {scene.bubble ? (
                 <div className="office-bubble office-bubble-actor">
                   <span>{truncate(scene.bubble, 34)}</span>
+                </div>
+              ) : null}
+
+              {celebrationAgent?.id === agent.id && latestApproved ? (
+                <div className="office-bubble office-bubble-celebration">
+                  <span>Ship it approved!</span>
                 </div>
               ) : null}
 

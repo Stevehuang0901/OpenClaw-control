@@ -100,7 +100,7 @@ export const resolveAgentSceneState = (
       x: agent.desk.x,
       y: agent.desk.y + 9,
       pose: "working",
-      bubble: task?.title ?? "Reviewing queue",
+      bubble: task ? `On it: ${task.title}` : "Reviewing queue",
       activityLabel: "At desk",
       activityDetail: task
         ? `${task.title} is underway at the ${roleMeta[agent.role].label.toLowerCase()} desk.`
@@ -118,7 +118,7 @@ export const resolveAgentSceneState = (
         interpolate(agent.desk.y, agentById.get(outgoingHandoff.toAgentId)?.desk.y, 0.42) +
         10,
       pose: "handoff",
-      bubble: `To ${recipient}`,
+      bubble: `Packet to ${recipient}!`,
       activityLabel: "In transit",
       activityDetail: `Passing a finished packet over to ${recipient}.`
     };
@@ -134,7 +134,7 @@ export const resolveAgentSceneState = (
         interpolate(agent.desk.y, agentById.get(incomingHandoff.fromAgentId)?.desk.y, 0.18) +
         9,
       pose: "handoff",
-      bubble: "Receiving",
+      bubble: `Incoming from ${sender}!`,
       activityLabel: "Packet intake",
       activityDetail: `Waiting for ${sender} to finish the handoff and open the next step.`
     };
