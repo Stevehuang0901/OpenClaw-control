@@ -1,9 +1,9 @@
-import { formatClock, truncate } from "../lib/format";
-import { taskStatusLabel, taskStatusTone } from "../lib/status";
+import { formatClock, formatNumber, truncate } from "../lib/format";
+import { getWorkflowProgress } from "../lib/workflows";
+import { roleMeta } from "../types/contracts";
 import type {
   ApprovalRecord,
   AgentRecord,
-  TaskRecord,
   WorkflowRecord
 } from "../types/contracts";
 
@@ -15,35 +15,6 @@ interface TaskBoardPanelProps {
   onSelectWorkflow: (workflowId: string) => void;
 }
 
-type BoardColumnKey = "queued" | "active" | "review" | "complete";
-
-const boardColumns: Array<{
-  key: BoardColumnKey;
-  label: string;
-  description: string;
-}> = [
-  {
-    key: "queued",
-    label: "Queued",
-    description: "Waiting in the gateway queue."
-  },
-  {
-    key: "active",
-    label: "Active",
-    description: "Currently being worked at a desk."
-  },
-  {
-    key: "review",
-    label: "Handoff",
-    description: "Finished packets in motion or awaiting review."
-  },
-  {
-    key: "complete",
-    label: "Complete",
-    description: "Delivered tasks and shipped workflows."
-  }
-];
-
 export function TaskBoardPanel({
   approvals,
   agents,
@@ -51,88 +22,173 @@ export function TaskBoardPanel({
   workflows,
   onSelectWorkflow
 }: TaskBoardPanelProps) {
-  const agentById = new Map(agents.map((agent) => [agent.id, agent.name]));
   const approvalByWorkflow = new Map(
     approvals.map((approval) => [approval.workflowId, approval])
   );
-  const boardItems = workflows
-    .flatMap((workflow) =>
-      workflow.tasks.map((task) => ({
-        workflow,
-        task,
-        approval: approvalByWorkflow.get(workflow.id) ?? null,
-        column: resolveColumn(task)
-      }))
-    )
-    .sort((left, right) => right.workflow.updatedAt.localeCompare(left.workflow.updatedAt));
+
+  const sortedWorkflows = [...workflows].sort((left, right) =>
+    right.updatedAt.localeCompare(left.updatedAt)
+  );
+
+  const summary = {
+    queued: workflows.filter((workflow) => workflow.status === "queued").length,
+    running: workflows.filter((workflow) => workflow.status === "running").length,
+    completed: workflows.filter((workflow) => workflow.status === "completed").length,
+    approvals: approvals.filter((approval) => approval.status === "pending").length
+  };
 
   return (
     <section className="panel p-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="pixel-label">Task Board</p>
-          <h2 className="mt-2 text-2xl font-bold text-ink">Mission kanban</h2>
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink/70">
-            Pulled from the imported mission-control ideas: every task lands on a
-            dark board now, with handoff state, workflow owner, and approval risk
-            visible at a glance.
+          <p className="pixel-label">Workflow Board</p>
+          <h2 className="mt-2 text-2xl font-bold text-ink">Readable mission queue</h2>
+          <p className="mt-3 max-w-3xl text-sm leading-relaxed text-ink/66">
+            One card per workflow, with the current stage, next stage, approval state,
+            and four-step pipeline visible without squeezing text into narrow columns.
           </p>
         </div>
-        <div className="rounded-none border-2 border-ink/15 bg-[#15101d] px-4 py-3 shadow-pixel">
-          <p className="text-[10px] uppercase tracking-[0.24em] text-ink/48">
-            Board signal
-          </p>
-          <p className="mt-2 text-sm text-ink/72">
-            {boardItems.filter((item) => item.task.status === "in_progress").length} live
-            tasks · {approvals.filter((approval) => approval.status === "pending").length} approvals
-            waiting
-          </p>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <QueueBadge label="Queued" value={summary.queued} tone="neutral" />
+          <QueueBadge label="Running" value={summary.running} tone="teal" />
+          <QueueBadge label="Completed" value={summary.completed} tone="mint" />
+          <QueueBadge label="Approvals" value={summary.approvals} tone="coral" />
         </div>
       </div>
 
-      <div className="mt-5 grid gap-4 xl:grid-cols-4">
-        {boardColumns.map((column) => {
-          const items = boardItems.filter((item) => item.column === column.key);
+      <div className="mt-5 space-y-4">
+        {sortedWorkflows.length === 0 ? (
+          <div className="rounded-none border-2 border-dashed border-ink/12 px-4 py-8 text-sm text-ink/56">
+            No workflows yet. Create one from the Office page and it will show up here.
+          </div>
+        ) : null}
+
+        {sortedWorkflows.map((workflow) => {
+          const progress = getWorkflowProgress(workflow);
+          const approval = approvalByWorkflow.get(workflow.id) ?? null;
+          const activeTask = progress.activeTask ?? null;
+          const nextTask = progress.nextTask ?? null;
+          const activeAgent =
+            activeTask?.ownerAgentId
+              ? agents.find((agent) => agent.id === activeTask.ownerAgentId) ?? null
+              : null;
 
           return (
-            <div
-              key={column.key}
-              className="rounded-none border-2 border-ink/15 bg-[#100d17] p-4 shadow-pixel"
+            <button
+              key={workflow.id}
+              type="button"
+              className={`w-full rounded-none border-2 p-4 text-left shadow-pixel transition hover:-translate-y-0.5 ${
+                workflow.id === selectedWorkflowId
+                  ? "border-teal/55 bg-[#21192c]"
+                  : "border-ink/12 bg-[#14101c] hover:border-ink/36"
+              }`}
+              onClick={() => onSelectWorkflow(workflow.id)}
             >
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-bold uppercase tracking-[0.2em] text-ink">
-                    {column.label}
-                  </p>
-                  <p className="mt-2 text-xs leading-relaxed text-ink/55">
-                    {column.description}
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="max-w-3xl">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-none border-2 border-ink/15 bg-[#0f0c15] px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-ink/52">
+                      {workflow.id}
+                    </span>
+                    <span className={`workflow-status workflow-status-${workflow.status}`}>
+                      {workflow.status}
+                    </span>
+                  </div>
+                  <h3 className="mt-3 text-xl font-bold text-ink">
+                    {workflow.summary}
+                  </h3>
+                  <p className="mt-3 text-sm leading-relaxed text-ink/68">
+                    {truncate(workflow.prompt, 180)}
                   </p>
                 </div>
-                <span className="rounded-none border-2 border-ink/15 bg-[#1b1526] px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-ink/72">
-                  {items.length}
-                </span>
+
+                <div className="grid gap-2 text-right text-xs uppercase tracking-[0.18em] text-ink/48">
+                  <span>Updated {formatClock(workflow.updatedAt)}</span>
+                  <span>
+                    {workflow.usage
+                      ? `${formatNumber(workflow.usage.totalTokens)} tok`
+                      : "No usage"}
+                  </span>
+                  <span>{progress.percent}% complete</span>
+                </div>
               </div>
 
-              <div className="mt-4 space-y-3">
-                {items.length === 0 ? (
-                  <div className="rounded-none border-2 border-dashed border-ink/15 px-4 py-6 text-sm text-ink/52">
-                    Nothing parked here right now.
-                  </div>
-                ) : null}
-
-                {items.map(({ workflow, task, approval }) => (
-                  <TaskCard
-                    key={task.id}
-                    agentName={task.ownerAgentId ? agentById.get(task.ownerAgentId) : null}
-                    approval={approval}
-                    selected={workflow.id === selectedWorkflowId}
-                    task={task}
-                    workflow={workflow}
-                    onSelectWorkflow={onSelectWorkflow}
-                  />
-                ))}
+              <div className="mt-4 grid gap-3 xl:grid-cols-[0.9fr_0.9fr_1.2fr]">
+                <SignalCard
+                  label="Current"
+                  value={
+                    activeTask
+                      ? `${activeTask.title} at ${activeAgent?.name ?? "assigned desk"}`
+                      : "No active desk"
+                  }
+                  detail={
+                    activeTask
+                      ? `${roleMeta[activeTask.role].label} is executing the current step.`
+                      : "Workflow is queued, complete, or between handoffs."
+                  }
+                  tone="teal"
+                />
+                <SignalCard
+                  label="Next"
+                  value={nextTask ? nextTask.title : "No next step queued"}
+                  detail={
+                    nextTask
+                      ? `${roleMeta[nextTask.role].label} is next in line.`
+                      : approval?.status === "pending"
+                        ? "Waiting for release approval."
+                        : "No pending step right now."
+                  }
+                  tone="brass"
+                />
+                <SignalCard
+                  label="Release"
+                  value={
+                    approval
+                      ? `${approval.status}${approval.status === "pending" ? " approval" : ""}`
+                      : "No approval packet yet"
+                  }
+                  detail={
+                    approval
+                      ? truncate(approval.summary, 120)
+                      : "Approval record appears after validator completion."
+                  }
+                  tone={
+                    approval?.status === "approved"
+                      ? "mint"
+                      : approval?.status === "rejected"
+                        ? "coral"
+                        : "neutral"
+                  }
+                />
               </div>
-            </div>
+
+              <div className="mt-4 grid gap-3 md:grid-cols-4">
+                {workflow.tasks.map((task) => {
+                  const tone =
+                    task.status === "in_progress"
+                      ? "border-teal/45 bg-teal/10"
+                      : ["done", "handed_off", "completed"].includes(task.status)
+                        ? "border-mint/35 bg-mint/10"
+                        : "border-ink/12 bg-[#0f0c15]";
+                  const agentName =
+                    task.ownerAgentId
+                      ? agents.find((agent) => agent.id === task.ownerAgentId)?.name ?? "Desk"
+                      : "Queue";
+
+                  return (
+                    <div key={task.id} className={`rounded-none border-2 p-3 ${tone}`}>
+                      <p className="text-[10px] uppercase tracking-[0.2em] text-ink/44">
+                        Step {task.order}
+                      </p>
+                      <p className="mt-2 text-sm font-bold text-ink">{task.title}</p>
+                      <p className="mt-2 text-xs uppercase tracking-[0.16em] text-ink/52">
+                        {agentName}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </button>
           );
         })}
       </div>
@@ -140,86 +196,59 @@ export function TaskBoardPanel({
   );
 }
 
-function TaskCard({
-  agentName,
-  approval,
-  selected,
-  task,
-  workflow,
-  onSelectWorkflow
+function QueueBadge({
+  label,
+  value,
+  tone
 }: {
-  agentName: string | null | undefined;
-  approval: ApprovalRecord | null;
-  selected: boolean;
-  task: TaskRecord;
-  workflow: WorkflowRecord;
-  onSelectWorkflow: (workflowId: string) => void;
+  label: string;
+  value: number;
+  tone: "teal" | "mint" | "coral" | "neutral";
 }) {
+  const toneClass =
+    tone === "teal"
+      ? "border-teal/35 bg-teal/10 text-teal"
+      : tone === "mint"
+        ? "border-mint/35 bg-mint/10 text-mint"
+        : tone === "coral"
+          ? "border-coral/35 bg-coral/10 text-coral"
+          : "border-ink/12 bg-[#100d17] text-ink";
+
   return (
-    <button
-      type="button"
-      className={`w-full rounded-none border-2 p-4 text-left shadow-pixel transition hover:-translate-y-0.5 ${
-        selected
-          ? "border-ink bg-[#21192c]"
-          : "border-ink/15 bg-[#17121f] hover:border-ink/60"
-      }`}
-      onClick={() => onSelectWorkflow(workflow.id)}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-[10px] uppercase tracking-[0.22em] text-ink/45">
-            {workflow.id}
-          </p>
-          <p className="mt-2 text-base font-bold text-ink">{task.title}</p>
-        </div>
-        <span
-          className={`rounded-none border-2 border-current px-2 py-1 text-[10px] uppercase tracking-[0.16em] ${taskStatusTone[task.status]}`}
-        >
-          {taskStatusLabel[task.status]}
-        </span>
-      </div>
-
-      <p className="mt-3 text-sm leading-relaxed text-ink/72">
-        {truncate(task.output ?? task.description, 140)}
-      </p>
-
-      <div className="mt-4 flex flex-wrap gap-2 text-[10px] uppercase tracking-[0.18em] text-ink/52">
-        <span className="rounded-none border-2 border-ink/15 bg-[#110d18] px-2 py-1">
-          {workflow.summary}
-        </span>
-        <span className="rounded-none border-2 border-ink/15 bg-[#110d18] px-2 py-1">
-          {agentName ?? "Gateway queue"}
-        </span>
-        <span className="rounded-none border-2 border-ink/15 bg-[#110d18] px-2 py-1">
-          {task.role}
-        </span>
-      </div>
-
-      {approval?.status === "pending" && task.status === "completed" ? (
-        <div className="mt-4 rounded-none border-2 border-coral/45 bg-coral/10 px-3 py-2 text-xs leading-relaxed text-coral">
-          Approval still pending for this delivery package.
-        </div>
-      ) : null}
-
-      <div className="mt-4 text-[10px] uppercase tracking-[0.18em] text-ink/45">
-        Updated {formatClock(task.completedAt ?? task.startedAt ?? workflow.updatedAt)}
-      </div>
-    </button>
+    <div className={`rounded-none border-2 px-3 py-3 shadow-pixel ${toneClass}`}>
+      <p className="text-[10px] uppercase tracking-[0.22em] text-current">{label}</p>
+      <p className="mt-2 text-2xl font-bold text-current">{value}</p>
+    </div>
   );
 }
 
-const resolveColumn = (task: TaskRecord): BoardColumnKey => {
-  if (task.status === "pending") {
-    return "queued";
-  }
+function SignalCard({
+  label,
+  value,
+  detail,
+  tone
+}: {
+  label: string;
+  value: string;
+  detail: string;
+  tone: "teal" | "brass" | "mint" | "coral" | "neutral";
+}) {
+  const toneClass =
+    tone === "teal"
+      ? "border-teal/35 bg-teal/10"
+      : tone === "brass"
+        ? "border-brass/35 bg-brass/10"
+        : tone === "mint"
+          ? "border-mint/35 bg-mint/10"
+          : tone === "coral"
+            ? "border-coral/35 bg-coral/10"
+            : "border-ink/12 bg-[#0f0c15]";
 
-  if (task.status === "in_progress") {
-    return "active";
-  }
-
-  if (task.status === "done" || task.status === "handed_off") {
-    return "review";
-  }
-
-  return "complete";
-};
+  return (
+    <div className={`rounded-none border-2 px-4 py-3 ${toneClass}`}>
+      <p className="text-[10px] uppercase tracking-[0.22em] text-ink/44">{label}</p>
+      <p className="mt-3 text-sm font-bold text-ink">{value}</p>
+      <p className="mt-3 text-sm leading-relaxed text-ink/64">{detail}</p>
+    </div>
+  );
+}

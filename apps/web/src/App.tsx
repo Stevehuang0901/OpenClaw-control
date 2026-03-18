@@ -275,7 +275,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#09070d] px-3 py-4 text-ink sm:px-4 lg:px-5">
-      <div className="mx-auto grid max-w-[1700px] gap-6 lg:grid-cols-[292px_minmax(0,1fr)]">
+      <div className="mx-auto grid max-w-[1700px] gap-6 lg:grid-cols-[252px_minmax(0,1fr)]">
         <OperationsSidebar
           activePage={activePage}
           approvals={snapshot.approvals}
@@ -440,7 +440,7 @@ function renderPageContent(input: {
             workflows={snapshot.workflows}
           />
           <MetricStrip metrics={snapshot.metrics} />
-          <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
+          <div className="grid gap-6 2xl:grid-cols-[1.28fr_0.72fr]">
             <TaskBoardPanel
               approvals={snapshot.approvals}
               agents={snapshot.agents}
@@ -448,24 +448,24 @@ function renderPageContent(input: {
               workflows={snapshot.workflows}
               onSelectWorkflow={onSelectWorkflow}
             />
-            <WorkflowPanel
-              workflows={snapshot.workflows}
+            <AgentRoster
               agents={snapshot.agents}
-              selectedWorkflowId={selectedWorkflowId}
-              onSelectWorkflow={onSelectWorkflow}
+              workflows={snapshot.workflows}
+              handoffs={snapshot.handoffs}
             />
           </div>
-          <AgentRoster
-            agents={snapshot.agents}
+          <WorkflowPanel
             workflows={snapshot.workflows}
-            handoffs={snapshot.handoffs}
+            agents={snapshot.agents}
+            selectedWorkflowId={selectedWorkflowId}
+            onSelectWorkflow={onSelectWorkflow}
           />
         </div>
       );
 
     case "activity":
       return (
-        <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
+        <div className="space-y-6">
           <WorkflowPanel
             workflows={snapshot.workflows}
             agents={snapshot.agents}

@@ -30,68 +30,35 @@ const navigationGroups: Array<{
     id: DashboardPage;
     code: string;
     label: string;
-    note: string;
   }>;
 }> = [
   {
-    label: "Overview",
+    label: "Main",
     items: [
-      {
-        id: "office",
-        code: "01",
-        label: "Office",
-        note: "Main pixel floor, prompt input, and live output."
-      },
-      {
-        id: "dashboard",
-        code: "02",
-        label: "Dashboard",
-        note: "Metrics, board state, workflow trace, and crew summary."
-      },
-      {
-        id: "activity",
-        code: "03",
-        label: "Activity",
-        note: "Message log and system event stream."
-      }
+      { id: "office", code: "01", label: "Office" },
+      { id: "dashboard", code: "02", label: "Dashboard" },
+      { id: "activity", code: "03", label: "Activity" }
     ]
   },
   {
     label: "Workflow",
-    items: [
-      {
-        id: "approvals",
-        code: "04",
-        label: "Approvals",
-        note: "Review validator output and sign off releases."
-      }
-    ]
+    items: [{ id: "approvals", code: "04", label: "Approvals" }]
   },
   {
-    label: "Platform",
+    label: "Tools",
     items: [
-      {
-        id: "operations",
-        code: "05",
-        label: "Operations",
-        note: "Gateway probe plus token and provider monitoring."
-      },
-      {
-        id: "skills",
-        code: "06",
-        label: "Skills",
-        note: "Browse, install, update, and inspect skill packs."
-      }
+      { id: "operations", code: "05", label: "Operations" },
+      { id: "skills", code: "06", label: "Skills" }
     ]
   }
 ];
 
 export function OperationsSidebar({
   activePage,
+  approvals,
   connected,
   metrics,
   openclaw,
-  approvals,
   workflows,
   onSelectPage
 }: OperationsSidebarProps) {
@@ -104,98 +71,96 @@ export function OperationsSidebar({
 
   return (
     <aside className="panel lg:sticky lg:top-4 lg:h-[calc(100vh-2rem)] lg:overflow-auto">
-      <div className="border-b-2 border-ink/12 px-5 py-5">
+      <div className="border-b-2 border-ink/12 px-4 py-5">
         <p className="pixel-label">ClawControl</p>
-        <h2 className="mt-3 text-2xl font-bold text-ink">Mission dashboard</h2>
-        <p className="mt-3 text-sm leading-relaxed text-ink/66">
-          Split the control room into clean pages, keep the office alive, and let
-          each concern breathe in its own view.
+        <h2 className="mt-3 text-xl font-bold text-ink">Mission dashboard</h2>
+        <p className="mt-3 text-sm leading-relaxed text-ink/62">
+          Cleaner navigation, faster scanning, less wall-of-text.
         </p>
       </div>
 
-      <div className="grid gap-3 border-b-2 border-ink/12 px-5 py-5">
-        <StatusRow
-          label="Gateway"
-          value={connected ? "online" : "offline"}
-          tone={connected ? "good" : "warn"}
-        />
-        <StatusRow
-          label="OpenClaw"
-          value={openclaw.available ? "live" : "cold"}
-          tone={openclaw.available ? "good" : "warn"}
-        />
-        <StatusRow
-          label="Requests"
-          value={`${liveWorkflows} live`}
+      <div className="grid grid-cols-2 gap-3 border-b-2 border-ink/12 px-4 py-4">
+        <CompactStat
+          label="Live"
+          value={String(liveWorkflows)}
           tone="neutral"
         />
-        <StatusRow
+        <CompactStat
           label="Approvals"
-          value={`${pendingApprovals} pending`}
+          value={String(pendingApprovals)}
           tone={pendingApprovals > 0 ? "warn" : "good"}
         />
-      </div>
-
-      <div className="grid gap-3 border-b-2 border-ink/12 px-5 py-5 sm:grid-cols-2 lg:grid-cols-1">
-        <MiniStat
-          label="Completed"
-          value={formatNumber(metrics.completedWorkflows)}
-          note="Delivered workflows"
+        <CompactStat
+          label="Gateway"
+          value={connected ? "up" : "down"}
+          tone={connected ? "good" : "warn"}
         />
-        <MiniStat
+        <CompactStat
           label="Tokens"
           value={formatNumber(metrics.estimatedTotalTokens)}
-          note="Current est total"
+          tone="neutral"
         />
       </div>
 
-      <nav className="px-4 py-5">
+      <div className="border-b-2 border-ink/12 px-4 py-4">
+        <div className="rounded-none border-2 border-ink/12 bg-[#100d17] px-3 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-[10px] uppercase tracking-[0.22em] text-ink/46">
+              OpenClaw
+            </span>
+            <span
+              className={`rounded-none border-2 border-current px-2 py-1 text-[10px] uppercase tracking-[0.16em] ${
+                openclaw.available
+                  ? "bg-mint/18 text-mint"
+                  : "bg-coral/18 text-coral"
+              }`}
+            >
+              {openclaw.available ? "live" : "cold"}
+            </span>
+          </div>
+          <p className="mt-3 text-xs leading-relaxed text-ink/62">
+            {openclaw.gateway.reachable
+              ? "Gateway reachable."
+              : openclaw.gateway.error ?? "Run a gateway probe from Operations if needed."}
+          </p>
+        </div>
+      </div>
+
+      <nav className="px-3 py-4">
         <div className="space-y-5">
           {navigationGroups.map((group) => (
             <div key={group.label}>
-              <p className="px-1 text-[10px] uppercase tracking-[0.28em] text-ink/42">
+              <p className="px-2 text-[10px] uppercase tracking-[0.28em] text-ink/40">
                 {group.label}
               </p>
-              <div className="mt-3 space-y-2">
+              <div className="mt-2 space-y-2">
                 {group.items.map((item) => {
                   const active = activePage === item.id;
-                  const badge = resolveBadge(item.id, {
-                    liveWorkflows,
-                    pendingApprovals,
-                    openclaw
-                  });
 
                   return (
                     <button
                       key={item.id}
                       type="button"
-                      className={`w-full rounded-none border-2 px-4 py-3 text-left shadow-pixel transition hover:-translate-y-0.5 ${
+                      className={`w-full rounded-none border-2 px-3 py-3 text-left shadow-pixel transition hover:-translate-y-0.5 ${
                         active
-                          ? "border-ink bg-[#241b30]"
-                          : "border-ink/12 bg-[#14101c] hover:border-ink/50 hover:bg-[#1a1424]"
+                          ? "border-teal/55 bg-[#21192c]"
+                          : "border-ink/12 bg-[#14101c] hover:border-ink/40"
                       }`}
                       onClick={() => onSelectPage(item.id)}
                     >
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
-                          <span className="rounded-none border-2 border-ink/20 bg-[#0f0c15] px-2 py-1 text-[10px] uppercase tracking-[0.2em] text-ink/60">
+                          <span className="rounded-none border-2 border-ink/15 bg-[#0f0c15] px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-ink/54">
                             {item.code}
                           </span>
-                          <span className="text-sm font-bold uppercase tracking-[0.16em] text-ink">
+                          <span className="text-sm font-bold uppercase tracking-[0.14em] text-ink">
                             {item.label}
                           </span>
                         </div>
-                        <span
-                          className={`rounded-none border-2 border-current px-2 py-1 text-[10px] uppercase tracking-[0.16em] ${
-                            active ? "bg-teal/18 text-teal" : "bg-[#0f0c15] text-ink/62"
-                          }`}
-                        >
-                          {badge}
+                        <span className="text-[10px] uppercase tracking-[0.18em] text-ink/42">
+                          {resolveBadge(item.id, pendingApprovals, liveWorkflows)}
                         </span>
                       </div>
-                      <p className="mt-3 text-xs leading-relaxed text-ink/58">
-                        {item.note}
-                      </p>
                     </button>
                   );
                 })}
@@ -208,25 +173,7 @@ export function OperationsSidebar({
   );
 }
 
-function MiniStat({
-  label,
-  value,
-  note
-}: {
-  label: string;
-  value: string;
-  note: string;
-}) {
-  return (
-    <article className="rounded-none border-2 border-ink/12 bg-[#14101c] px-4 py-3 shadow-pixel">
-      <p className="text-[10px] uppercase tracking-[0.24em] text-ink/46">{label}</p>
-      <p className="mt-2 text-2xl font-bold text-ink">{value}</p>
-      <p className="mt-2 text-xs text-ink/56">{note}</p>
-    </article>
-  );
-}
-
-function StatusRow({
+function CompactStat({
   label,
   value,
   tone
@@ -237,45 +184,38 @@ function StatusRow({
 }) {
   const toneClass =
     tone === "good"
-      ? "bg-mint/20 text-mint"
+      ? "border-mint/35 bg-mint/10 text-mint"
       : tone === "warn"
-        ? "bg-coral/18 text-coral"
-        : "bg-[#0f0c15] text-ink";
+        ? "border-coral/35 bg-coral/10 text-coral"
+        : "border-ink/12 bg-[#100d17] text-ink";
 
   return (
-    <div className="flex items-center justify-between gap-3 rounded-none border-2 border-ink/12 bg-[#100d17] px-4 py-3">
-      <span className="text-xs uppercase tracking-[0.24em] text-ink/50">{label}</span>
-      <span
-        className={`rounded-none border-2 border-current px-2 py-1 text-[10px] uppercase tracking-[0.16em] ${toneClass}`}
-      >
-        {value}
-      </span>
+    <div className={`rounded-none border-2 px-3 py-3 shadow-pixel ${toneClass}`}>
+      <p className="text-[10px] uppercase tracking-[0.24em] text-current">{label}</p>
+      <p className="mt-2 text-xl font-bold text-current">{value}</p>
     </div>
   );
 }
 
 function resolveBadge(
   page: DashboardPage,
-  input: {
-    liveWorkflows: number;
-    pendingApprovals: number;
-    openclaw: OpenClawStatusSnapshot;
-  }
+  pendingApprovals: number,
+  liveWorkflows: number
 ) {
   switch (page) {
     case "office":
-      return `${input.liveWorkflows} live`;
+      return `${liveWorkflows} live`;
     case "dashboard":
       return "overview";
     case "activity":
-      return "feed";
+      return "timeline";
     case "approvals":
-      return `${input.pendingApprovals} wait`;
+      return `${pendingApprovals} wait`;
     case "operations":
-      return input.openclaw.available ? "cli" : "offline";
+      return "ops";
     case "skills":
       return "market";
     default:
-      return "view";
+      return "";
   }
 }

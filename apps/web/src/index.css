@@ -101,6 +101,32 @@ button {
   color: #e3a05f;
 }
 
+.workflow-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid currentColor;
+  padding: 0.22rem 0.5rem;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.workflow-status-queued {
+  background: rgba(190, 180, 208, 0.12);
+  color: #beb4d0;
+}
+
+.workflow-status-running {
+  background: rgba(88, 178, 169, 0.12);
+  color: #58b2a9;
+}
+
+.workflow-status-completed {
+  background: rgba(148, 214, 127, 0.12);
+  color: #94d67f;
+}
+
 .timeline-shell {
   position: relative;
   display: grid;
