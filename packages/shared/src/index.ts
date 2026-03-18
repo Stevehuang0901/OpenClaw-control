@@ -192,6 +192,63 @@ export interface OpenClawStatusSnapshot {
   gateway: OpenClawGatewayStatus;
 }
 
+export interface OpenClawSkillMissing {
+  bins: string[];
+  anyBins: string[];
+  env: string[];
+  config: string[];
+  os: string[];
+}
+
+export interface OpenClawSkillRecord {
+  name: string;
+  description: string;
+  emoji?: string;
+  eligible: boolean;
+  disabled: boolean;
+  blockedByAllowlist: boolean;
+  source: string;
+  bundled: boolean;
+  homepage?: string;
+  primaryEnv?: string;
+  missing: OpenClawSkillMissing;
+}
+
+export interface OpenClawSkillsSnapshot {
+  workspaceDir: string;
+  managedSkillsDir: string;
+  skills: OpenClawSkillRecord[];
+}
+
+export interface ClawHubCatalogItem {
+  slug: string;
+  displayName: string;
+  summary: string;
+  latestVersion: string | null;
+  ownerHandle: string | null;
+  updatedAt: string | null;
+  downloads: number | null;
+  installsCurrent: number | null;
+  installsAllTime: number | null;
+  stars: number | null;
+  score: number | null;
+  installed: boolean;
+}
+
+export interface ClawHubCatalogResponse {
+  query: string | null;
+  items: ClawHubCatalogItem[];
+}
+
+export interface SkillInstallResult {
+  ok: boolean;
+  slug: string;
+  version: string | null;
+  managedSkillsDir: string;
+  installPath: string;
+  message: string;
+}
+
 export interface SystemSnapshot {
   generatedAt: string;
   agents: AgentRecord[];

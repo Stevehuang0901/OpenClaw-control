@@ -5,6 +5,7 @@ import { AgentRoster } from "./components/AgentRoster";
 import { EventFeed } from "./components/EventFeed";
 import { MetricStrip } from "./components/MetricStrip";
 import { OpenClawUsagePanel } from "./components/OpenClawUsagePanel";
+import { SkillMarketplacePanel } from "./components/SkillMarketplacePanel";
 import { OfficeScene } from "./components/OfficeScene";
 import { WorkflowPanel } from "./components/WorkflowPanel";
 import type { GatewayEvent, SystemSnapshot } from "./types/contracts";
@@ -260,6 +261,7 @@ export default function App() {
               workflows={snapshot.workflows}
             />
             <OpenClawUsagePanel openclaw={snapshot.openclaw} />
+            <SkillMarketplacePanel />
             <EventFeed
               agents={snapshot.agents}
               events={events}

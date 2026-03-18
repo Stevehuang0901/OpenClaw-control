@@ -10,6 +10,7 @@ ClawControl is a full end-to-end multi-agent control room built for OpenClaw-sty
 - Visualizes the office as a retro pixel workspace with animated task packets between desks.
 - Shows workflow queue state, task ownership, final output, metrics, and agent-to-agent messages.
 - Polls `openclaw status --usage --json` to display real OpenClaw provider quota, recent session token usage, cache reads, and gateway reachability.
+- Integrates ClawHub search and install flows so you can search remote skills and install them into OpenClaw from the dashboard.
 
 ## Stack
 
@@ -72,6 +73,9 @@ After `npm run build`, the backend serves the built dashboard from `dist/web`.
 - `GET /api/health` basic health check.
 - `GET /api/state` returns the latest full gateway snapshot.
 - `GET /api/openclaw/status` returns the latest OpenClaw usage snapshot gathered from the local CLI.
+- `GET /api/skills/openclaw` returns the current OpenClaw skill inventory from `openclaw skills list --json`.
+- `GET /api/skills/catalog?query=<term>&limit=<n>` searches ClawHub and returns installable skills.
+- `POST /api/skills/install` installs a ClawHub skill into the OpenClaw managed skills directory.
 - `POST /api/workflows` creates a new workflow.
 
 Request body:
@@ -106,6 +110,19 @@ The dashboard now exposes two usage layers:
   - gateway reachability and latency
 
 This aligns with the OpenClaw CLI and the OpenResponses API, where provider-reported `usage` is populated when the underlying model returns token counts.
+
+## Skills marketplace
+
+The dashboard now includes a skill marketplace panel backed by:
+
+- `openclaw skills list --json` for local/bundled/managed skill visibility
+- `clawhub search` plus `clawhub inspect --json` for remote discovery
+- `clawhub install` for one-click installation
+
+Implementation note:
+
+- The app installs skills into the OpenClaw `managedSkillsDir` reported by the local CLI snapshot so new installs land where OpenClaw can pick them up.
+- Based on the current ClawHub/OpenClaw docs, starting a new OpenClaw session is the safe way to ensure a freshly installed skill is picked up immediately.
 
 ## GitHub submission
 

@@ -7,6 +7,11 @@ import { Server } from "socket.io";
 
 import { buildGateway } from "./core/gateway";
 import { fetchOpenClawStatus } from "./core/openclawMonitor";
+import {
+  installSkillFromCatalog,
+  listOpenClawSkills,
+  searchSkillCatalog
+} from "./core/skillManager";
 import { seedAgents } from "./data/seedAgents";
 
 const gateway = buildGateway(seedAgents());
@@ -30,6 +35,62 @@ app.get("/api/state", (_request, response) => {
 
 app.get("/api/openclaw/status", (_request, response) => {
   response.json(gateway.getSnapshot().openclaw);
+});
+
+app.get("/api/skills/openclaw", async (_request, response) => {
+  try {
+    const skills = await listOpenClawSkills();
+    response.json(skills);
+  } catch (error) {
+    response.status(500).json({
+      error: error instanceof Error ? error.message : "Failed to load OpenClaw skills."
+    });
+  }
+});
+
+app.get("/api/skills/catalog", async (request, response) => {
+  try {
+    const query =
+      typeof request.query.query === "string" ? request.query.query.trim() : "";
+    const limit = Number(request.query.limit ?? 8);
+
+    if (!query) {
+      response.json({
+        query: null,
+        items: []
+      });
+      return;
+    }
+
+    const catalog = await searchSkillCatalog(query, Number.isFinite(limit) ? limit : 8);
+    response.json(catalog);
+  } catch (error) {
+    response.status(500).json({
+      error: error instanceof Error ? error.message : "Failed to search ClawHub."
+    });
+  }
+});
+
+app.post("/api/skills/install", async (request, response) => {
+  try {
+    const slug = typeof request.body?.slug === "string" ? request.body.slug.trim() : "";
+    const version =
+      typeof request.body?.version === "string" ? request.body.version.trim() : undefined;
+
+    if (!slug) {
+      response.status(400).json({
+        error: "slug is required"
+      });
+      return;
+    }
+
+    const result = await installSkillFromCatalog(slug, version);
+    response.status(201).json(result);
+  } catch (error) {
+    response.status(500).json({
+      error: error instanceof Error ? error.message : "Failed to install skill."
+    });
+  }
 });
 
 app.post("/api/workflows", (request, response) => {
