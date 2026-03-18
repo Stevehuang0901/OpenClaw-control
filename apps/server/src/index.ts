@@ -8,9 +8,14 @@ import { Server } from "socket.io";
 import { buildGateway } from "./core/gateway";
 import { fetchOpenClawStatus } from "./core/openclawMonitor";
 import {
+  getCatalogSkillDetail,
+  getManagedSkillDetail,
   installSkillFromCatalog,
+  listManagedSkills,
   listOpenClawSkills,
-  searchSkillCatalog
+  searchSkillCatalog,
+  uninstallManagedSkill,
+  updateManagedSkill
 } from "./core/skillManager";
 import { seedAgents } from "./data/seedAgents";
 
@@ -48,6 +53,17 @@ app.get("/api/skills/openclaw", async (_request, response) => {
   }
 });
 
+app.get("/api/skills/managed", async (_request, response) => {
+  try {
+    const skills = await listManagedSkills();
+    response.json(skills);
+  } catch (error) {
+    response.status(500).json({
+      error: error instanceof Error ? error.message : "Failed to load managed skills."
+    });
+  }
+});
+
 app.get("/api/skills/catalog", async (request, response) => {
   try {
     const query =
@@ -71,6 +87,28 @@ app.get("/api/skills/catalog", async (request, response) => {
   }
 });
 
+app.get("/api/skills/catalog/:slug", async (request, response) => {
+  try {
+    const detail = await getCatalogSkillDetail(request.params.slug);
+    response.json(detail);
+  } catch (error) {
+    response.status(500).json({
+      error: error instanceof Error ? error.message : "Failed to inspect skill."
+    });
+  }
+});
+
+app.get("/api/skills/managed/:slug", async (request, response) => {
+  try {
+    const detail = await getManagedSkillDetail(request.params.slug);
+    response.json(detail);
+  } catch (error) {
+    response.status(404).json({
+      error: error instanceof Error ? error.message : "Managed skill not found."
+    });
+  }
+});
+
 app.post("/api/skills/install", async (request, response) => {
   try {
     const slug = typeof request.body?.slug === "string" ? request.body.slug.trim() : "";
@@ -89,6 +127,48 @@ app.post("/api/skills/install", async (request, response) => {
   } catch (error) {
     response.status(500).json({
       error: error instanceof Error ? error.message : "Failed to install skill."
+    });
+  }
+});
+
+app.post("/api/skills/update", async (request, response) => {
+  try {
+    const slug = typeof request.body?.slug === "string" ? request.body.slug.trim() : "";
+    const version =
+      typeof request.body?.version === "string" ? request.body.version.trim() : undefined;
+
+    if (!slug) {
+      response.status(400).json({
+        error: "slug is required"
+      });
+      return;
+    }
+
+    const result = await updateManagedSkill(slug, version);
+    response.status(200).json(result);
+  } catch (error) {
+    response.status(500).json({
+      error: error instanceof Error ? error.message : "Failed to update skill."
+    });
+  }
+});
+
+app.post("/api/skills/uninstall", async (request, response) => {
+  try {
+    const slug = typeof request.body?.slug === "string" ? request.body.slug.trim() : "";
+
+    if (!slug) {
+      response.status(400).json({
+        error: "slug is required"
+      });
+      return;
+    }
+
+    const result = await uninstallManagedSkill(slug);
+    response.status(200).json(result);
+  } catch (error) {
+    response.status(500).json({
+      error: error instanceof Error ? error.message : "Failed to uninstall skill."
     });
   }
 });

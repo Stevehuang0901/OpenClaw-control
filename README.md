@@ -10,7 +10,7 @@ ClawControl is a full end-to-end multi-agent control room built for OpenClaw-sty
 - Visualizes the office as a retro pixel workspace with animated task packets between desks.
 - Shows workflow queue state, task ownership, final output, metrics, and agent-to-agent messages.
 - Polls `openclaw status --usage --json` to display real OpenClaw provider quota, recent session token usage, cache reads, and gateway reachability.
-- Integrates ClawHub search and install flows so you can search remote skills and install them into OpenClaw from the dashboard.
+- Integrates ClawHub search, inspect, install, update, and uninstall flows so you can manage skills from the dashboard.
 
 ## Stack
 
@@ -74,8 +74,13 @@ After `npm run build`, the backend serves the built dashboard from `dist/web`.
 - `GET /api/state` returns the latest full gateway snapshot.
 - `GET /api/openclaw/status` returns the latest OpenClaw usage snapshot gathered from the local CLI.
 - `GET /api/skills/openclaw` returns the current OpenClaw skill inventory from `openclaw skills list --json`.
+- `GET /api/skills/managed` returns ClawHub-managed installs under the OpenClaw managed skills directory.
 - `GET /api/skills/catalog?query=<term>&limit=<n>` searches ClawHub and returns installable skills.
+- `GET /api/skills/catalog/:slug` returns remote skill detail plus latest `SKILL.md` content.
+- `GET /api/skills/managed/:slug` returns the locally installed `SKILL.md` content for a managed skill.
 - `POST /api/skills/install` installs a ClawHub skill into the OpenClaw managed skills directory.
+- `POST /api/skills/update` updates an installed managed skill.
+- `POST /api/skills/uninstall` removes an installed managed skill.
 - `POST /api/workflows` creates a new workflow.
 
 Request body:
@@ -117,12 +122,14 @@ The dashboard now includes a skill marketplace panel backed by:
 
 - `openclaw skills list --json` for local/bundled/managed skill visibility
 - `clawhub search` plus `clawhub inspect --json` for remote discovery
-- `clawhub install` for one-click installation
+- `clawhub install`, `clawhub update`, and `clawhub uninstall` for one-click management
+- direct `SKILL.md` inspection for both remote catalog skills and locally installed managed skills
 
 Implementation note:
 
 - The app installs skills into the OpenClaw `managedSkillsDir` reported by the local CLI snapshot so new installs land where OpenClaw can pick them up.
 - Based on the current ClawHub/OpenClaw docs, starting a new OpenClaw session is the safe way to ensure a freshly installed skill is picked up immediately.
+- During local verification on March 18, 2026, `clawhub update` could refuse to overwrite a skill if the local files no longer match a published version, returning a message like `Use --force to overwrite.` The dashboard currently surfaces that error as-is instead of forcing an overwrite.
 
 ## GitHub submission
 

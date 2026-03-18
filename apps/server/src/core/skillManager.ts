@@ -1,12 +1,18 @@
 import { execFile } from "node:child_process";
+import { access, readFile } from "node:fs/promises";
+import { constants as fsConstants } from "node:fs";
 import path from "node:path";
 import { promisify } from "node:util";
 
 import type {
   ClawHubCatalogItem,
   ClawHubCatalogResponse,
+  ManagedSkillRecord,
+  ManagedSkillsSnapshot,
   OpenClawSkillRecord,
   OpenClawSkillsSnapshot,
+  SkillActionResult,
+  SkillDetailRecord,
   SkillInstallResult
 } from "../../../../packages/shared/src/index";
 
@@ -56,12 +62,17 @@ export const installSkillFromCatalog = async (
   slug: string,
   version?: string
 ): Promise<SkillInstallResult> => {
-  const skills = await listOpenClawSkills();
-  const managedSkillsDir = skills.managedSkillsDir;
-  const workdir = path.dirname(managedSkillsDir);
-  const dir = path.basename(managedSkillsDir);
+  const context = await resolveManagedContext();
 
-  const args = ["--workdir", workdir, "--dir", dir, "--no-input", "install", slug];
+  const args = [
+    "--workdir",
+    context.workdir,
+    "--dir",
+    context.dir,
+    "--no-input",
+    "install",
+    slug
+  ];
   if (version) {
     args.push("--version", version);
   }
@@ -72,9 +83,175 @@ export const installSkillFromCatalog = async (
     ok: true,
     slug,
     version: version ?? null,
-    managedSkillsDir,
-    installPath: path.join(managedSkillsDir, slug),
-    message: `Installed ${slug} into ${managedSkillsDir}.`
+    managedSkillsDir: context.managedSkillsDir,
+    installPath: path.join(context.managedSkillsDir, slug),
+    message: `Installed ${slug} into ${context.managedSkillsDir}.`
+  };
+};
+
+export const listManagedSkills = async (): Promise<ManagedSkillsSnapshot> => {
+  const context = await resolveManagedContext();
+  const { stdout } = await execFileAsync("clawhub", [
+    "--workdir",
+    context.workdir,
+    "--dir",
+    context.dir,
+    "list"
+  ]);
+
+  const skills = await Promise.all(
+    parseManagedSkillList(stdout).map(async (skill) => {
+      const installPath = path.join(context.managedSkillsDir, skill.slug);
+      const skillFilePath = path.join(installPath, "SKILL.md");
+      const hasSkillFile = await fileExists(skillFilePath);
+
+      return {
+        ...skill,
+        installPath,
+        hasSkillFile
+      } satisfies ManagedSkillRecord;
+    })
+  );
+
+  return {
+    managedSkillsDir: context.managedSkillsDir,
+    workdir: context.workdir,
+    skills
+  };
+};
+
+export const updateManagedSkill = async (
+  slug: string,
+  version?: string
+): Promise<SkillActionResult> => {
+  const context = await resolveManagedContext();
+  const args = [
+    "--workdir",
+    context.workdir,
+    "--dir",
+    context.dir,
+    "--no-input",
+    "update",
+    slug
+  ];
+
+  if (version) {
+    args.push("--version", version);
+  }
+
+  await execFileAsync("clawhub", args);
+
+  return {
+    ok: true,
+    slug,
+    version: version ?? null,
+    managedSkillsDir: context.managedSkillsDir,
+    installPath: path.join(context.managedSkillsDir, slug),
+    message: `Updated ${slug}${version ? ` to ${version}` : ""}.`
+  };
+};
+
+export const uninstallManagedSkill = async (
+  slug: string
+): Promise<SkillActionResult> => {
+  const context = await resolveManagedContext();
+  await execFileAsync("clawhub", [
+    "--workdir",
+    context.workdir,
+    "--dir",
+    context.dir,
+    "--no-input",
+    "uninstall",
+    slug,
+    "--yes"
+  ]);
+
+  return {
+    ok: true,
+    slug,
+    version: null,
+    managedSkillsDir: context.managedSkillsDir,
+    installPath: path.join(context.managedSkillsDir, slug),
+    message: `Removed ${slug} from ${context.managedSkillsDir}.`
+  };
+};
+
+export const getCatalogSkillDetail = async (
+  slug: string
+): Promise<SkillDetailRecord> => {
+  const managed = await listManagedSkills();
+  const installed = managed.skills.find((skill) => skill.slug === slug) ?? null;
+
+  const { stdout } = await execFileAsync("clawhub", [
+    "inspect",
+    slug,
+    "--file",
+    "SKILL.md",
+    "--json"
+  ]);
+  const raw = parseJsonObject(stdout);
+  const skill = asRecord(raw.skill);
+  const latestVersion = asRecord(raw.latestVersion);
+  const owner = asRecord(raw.owner);
+  const file = asRecord(raw.file);
+  const version = asRecord(raw.version);
+  const security = asRecord(version.security);
+  const llmScanner = asRecord(asRecord(security.scanners).llm);
+
+  return {
+    slug,
+    displayName:
+      typeof skill.displayName === "string"
+        ? skill.displayName
+        : typeof skill.slug === "string"
+          ? skill.slug
+          : slug,
+    summary: typeof skill.summary === "string" ? skill.summary : "No summary provided.",
+    ownerHandle: typeof owner.handle === "string" ? owner.handle : null,
+    latestVersion:
+      typeof latestVersion.version === "string" ? latestVersion.version : null,
+    changelog:
+      typeof latestVersion.changelog === "string" ? latestVersion.changelog : null,
+    updatedAt:
+      typeof skill.updatedAt === "number"
+        ? new Date(skill.updatedAt).toISOString()
+        : null,
+    skillMdContent: typeof file.content === "string" ? file.content : null,
+    installed: installed !== null,
+    installPath: installed?.installPath ?? null,
+    source: "catalog",
+    security: normalizeSecuritySummary(security, llmScanner)
+  };
+};
+
+export const getManagedSkillDetail = async (
+  slug: string
+): Promise<SkillDetailRecord> => {
+  const managed = await listManagedSkills();
+  const skill = managed.skills.find((entry) => entry.slug === slug);
+
+  if (!skill) {
+    throw new Error(`Managed skill "${slug}" was not found.`);
+  }
+
+  const skillMdPath = path.join(skill.installPath, "SKILL.md");
+  const skillMdContent = (await fileExists(skillMdPath))
+    ? await readFile(skillMdPath, "utf8")
+    : null;
+
+  return {
+    slug: skill.slug,
+    displayName: skill.slug,
+    summary: "Installed skill from the OpenClaw managed skills directory.",
+    ownerHandle: null,
+    latestVersion: skill.version,
+    changelog: null,
+    updatedAt: null,
+    skillMdContent,
+    installed: true,
+    installPath: skill.installPath,
+    source: "managed",
+    security: null
   };
 };
 
@@ -106,6 +283,29 @@ export const parseClawHubSearchOutput = (output: string) =>
         displayName: string;
         score: number;
       } => item !== null
+    );
+
+export const parseManagedSkillList = (output: string) =>
+  output
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0 && line !== "No installed skills.")
+    .map((line) => {
+      const match =
+        line.match(/^(?<slug>\S+)\s{2,}(?<version>\S+)$/u) ??
+        line.match(/^(?<slug>\S+)\s+(?<version>\S+)$/u);
+
+      if (!match?.groups) {
+        return null;
+      }
+
+      return {
+        slug: match.groups.slug,
+        version: match.groups.version
+      };
+    })
+    .filter(
+      (item): item is { slug: string; version: string } => item !== null
     );
 
 const inspectClawHubSkill = async (slug: string): Promise<ClawHubCatalogItem> => {
@@ -145,7 +345,9 @@ const normalizeOpenClawSkills = (
   raw: Record<string, unknown>
 ): OpenClawSkillsSnapshot => ({
   workspaceDir:
-    typeof raw.workspaceDir === "string" ? raw.workspaceDir : path.join(process.env.HOME ?? "", ".openclaw", "workspace"),
+    typeof raw.workspaceDir === "string"
+      ? raw.workspaceDir
+      : path.join(process.env.HOME ?? "", ".openclaw", "workspace"),
   managedSkillsDir:
     typeof raw.managedSkillsDir === "string"
       ? raw.managedSkillsDir
@@ -200,3 +402,43 @@ const asRecord = (value: unknown): Record<string, unknown> =>
   typeof value === "object" && value !== null ? (value as Record<string, unknown>) : {};
 
 const numberOrNull = (value: unknown) => (typeof value === "number" ? value : null);
+
+const resolveManagedContext = async () => {
+  const skills = await listOpenClawSkills();
+  const managedSkillsDir = skills.managedSkillsDir;
+
+  return {
+    managedSkillsDir,
+    workdir: path.dirname(managedSkillsDir),
+    dir: path.basename(managedSkillsDir)
+  };
+};
+
+const fileExists = async (target: string) => {
+  try {
+    await access(target, fsConstants.F_OK);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const normalizeSecuritySummary = (
+  security: Record<string, unknown>,
+  llmScanner: Record<string, unknown>
+) => {
+  if (Object.keys(security).length === 0) {
+    return null;
+  }
+
+  return {
+    status: typeof security.status === "string" ? security.status : null,
+    hasWarnings: Boolean(security.hasWarnings),
+    guidance: typeof llmScanner.guidance === "string" ? llmScanner.guidance : null,
+    summary: typeof llmScanner.summary === "string" ? llmScanner.summary : null,
+    checkedAt:
+      typeof security.checkedAt === "number"
+        ? new Date(security.checkedAt).toISOString()
+        : null
+  };
+};

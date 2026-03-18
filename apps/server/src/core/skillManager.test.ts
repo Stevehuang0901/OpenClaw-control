@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { parseClawHubSearchOutput } from "./skillManager";
+import { parseClawHubSearchOutput, parseManagedSkillList } from "./skillManager";
 
 describe("skillManager", () => {
   test("parses clawhub search output", () => {
@@ -16,5 +16,17 @@ gcalcli-calendar  Google Calendar (via gcalcli)  (3.661)
       displayName: "Calendar",
       score: 3.725
     });
+  });
+
+  test("parses managed skill list output", () => {
+    const items = parseManagedSkillList(`
+self-reflection  1.1.1
+calendar  1.0.0
+    `);
+
+    expect(items).toEqual([
+      { slug: "self-reflection", version: "1.1.1" },
+      { slug: "calendar", version: "1.0.0" }
+    ]);
   });
 });

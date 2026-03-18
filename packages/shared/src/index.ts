@@ -249,6 +249,51 @@ export interface SkillInstallResult {
   message: string;
 }
 
+export interface ManagedSkillRecord {
+  slug: string;
+  version: string | null;
+  installPath: string;
+  hasSkillFile: boolean;
+}
+
+export interface ManagedSkillsSnapshot {
+  managedSkillsDir: string;
+  workdir: string;
+  skills: ManagedSkillRecord[];
+}
+
+export interface SkillActionResult {
+  ok: boolean;
+  slug: string;
+  version: string | null;
+  managedSkillsDir: string;
+  installPath: string;
+  message: string;
+}
+
+export interface SkillSecuritySummary {
+  status: string | null;
+  hasWarnings: boolean;
+  guidance: string | null;
+  summary: string | null;
+  checkedAt: string | null;
+}
+
+export interface SkillDetailRecord {
+  slug: string;
+  displayName: string;
+  summary: string;
+  ownerHandle: string | null;
+  latestVersion: string | null;
+  changelog: string | null;
+  updatedAt: string | null;
+  skillMdContent: string | null;
+  installed: boolean;
+  installPath: string | null;
+  source: "catalog" | "managed";
+  security: SkillSecuritySummary | null;
+}
+
 export interface SystemSnapshot {
   generatedAt: string;
   agents: AgentRecord[];
