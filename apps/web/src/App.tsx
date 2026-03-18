@@ -4,6 +4,7 @@ import { io } from "socket.io-client";
 import { AgentRoster } from "./components/AgentRoster";
 import { EventFeed } from "./components/EventFeed";
 import { MetricStrip } from "./components/MetricStrip";
+import { OpenClawUsagePanel } from "./components/OpenClawUsagePanel";
 import { OfficeScene } from "./components/OfficeScene";
 import { WorkflowPanel } from "./components/WorkflowPanel";
 import type { GatewayEvent, SystemSnapshot } from "./types/contracts";
@@ -21,7 +22,34 @@ const emptySnapshot: SystemSnapshot = {
     tasksCompleted: 0,
     pendingTasks: 0,
     averageHandoffMs: 0,
-    averageCycleMs: 0
+    averageCycleMs: 0,
+    estimatedInputTokens: 0,
+    estimatedOutputTokens: 0,
+    estimatedTotalTokens: 0
+  },
+  openclaw: {
+    available: false,
+    source: "unavailable",
+    updatedAt: null,
+    error: null,
+    providers: [],
+    recentSessions: [],
+    totals: {
+      recentSessionCount: 0,
+      inputTokens: 0,
+      outputTokens: 0,
+      cacheRead: 0,
+      cacheWrite: 0,
+      totalTokens: 0,
+      averagePercentUsed: 0
+    },
+    gateway: {
+      mode: null,
+      url: null,
+      reachable: false,
+      connectLatencyMs: null,
+      error: null
+    }
   }
 };
 
@@ -231,6 +259,7 @@ export default function App() {
               agents={snapshot.agents}
               workflows={snapshot.workflows}
             />
+            <OpenClawUsagePanel openclaw={snapshot.openclaw} />
             <EventFeed
               agents={snapshot.agents}
               events={events}

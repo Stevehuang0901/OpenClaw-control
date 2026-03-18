@@ -4,6 +4,7 @@ export type {
   HandoffRecord,
   MessageRecord,
   MetricSnapshot,
+  OpenClawStatusSnapshot,
   SystemSnapshot,
   TaskRecord,
   TaskStatus,

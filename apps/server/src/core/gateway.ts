@@ -1,4 +1,6 @@
 import {
+  emptyOpenClawStatus,
+  emptyTokenUsage,
   roleMeta,
   type AgentRecord,
   type AgentRole,
@@ -7,9 +9,11 @@ import {
   type HandoffRecord,
   type MessageRecord,
   type MetricSnapshot,
+  type OpenClawStatusSnapshot,
   type SystemSnapshot,
   type TaskHistoryEntry,
   type TaskRecord,
+  type TokenUsage,
   type WorkflowRecord
 } from "../../../../packages/shared/src/index";
 
@@ -64,6 +68,7 @@ export class Gateway {
   private messages: MessageRecord[] = [];
   private handoffs: HandoffRecord[] = [];
   private completedHandoffDurations: number[] = [];
+  private openclawStatus: OpenClawStatusSnapshot = emptyOpenClawStatus();
 
   constructor(seed: AgentRecord[], options?: GatewayOptions) {
     for (const agent of seed) {
@@ -104,8 +109,14 @@ export class Gateway {
       workflows: structuredClone(workflows),
       messages: structuredClone(this.messages.slice(0, 48)),
       handoffs: structuredClone(this.handoffs),
-      metrics: this.computeMetrics(workflows)
+      metrics: this.computeMetrics(workflows),
+      openclaw: structuredClone(this.openclawStatus)
     };
+  }
+
+  setOpenClawStatus(status: OpenClawStatusSnapshot) {
+    this.openclawStatus = structuredClone(status);
+    this.emit("openclaw_status_updated", status);
   }
 
   submitWorkflow(prompt: string): WorkflowRecord {
@@ -129,6 +140,7 @@ export class Gateway {
         startedAt: null,
         completedAt: null,
         handoffAt: null,
+        usage: null,
         history: [
           this.buildHistoryEntry(
             "pending",
@@ -152,6 +164,7 @@ export class Gateway {
       createdAt,
       updatedAt: createdAt,
       finalOutput: null,
+      usage: null,
       tasks
     };
 
@@ -284,6 +297,7 @@ export class Gateway {
     task.status = "done";
     task.completedAt = completedAt;
     task.output = this.generateTaskOutput(workflow, task);
+    task.usage = this.estimateTaskUsage(workflow, task);
     task.history.push(
       this.buildHistoryEntry(
         "done",
@@ -295,6 +309,7 @@ export class Gateway {
 
     agent.status = "handoff";
     agent.completedTasks += 1;
+    workflow.usage = this.aggregateWorkflowUsage(workflow);
     workflow.updatedAt = completedAt;
 
     this.emit("task_updated", {
@@ -433,6 +448,7 @@ export class Gateway {
     workflow.status = "completed";
     workflow.updatedAt = completedAt;
     workflow.finalOutput = this.generateFinalOutput(workflow);
+    workflow.usage = this.aggregateWorkflowUsage(workflow);
 
     agent.status = "idle";
     agent.currentTaskId = null;
@@ -533,7 +549,10 @@ export class Gateway {
       tasksCompleted: tasks.filter((task) => task.status === "completed").length,
       pendingTasks: tasks.filter((task) => task.status === "pending").length,
       averageHandoffMs: average(this.completedHandoffDurations),
-      averageCycleMs: average(cycleDurations)
+      averageCycleMs: average(cycleDurations),
+      estimatedInputTokens: sumUsage(workflows, "inputTokens"),
+      estimatedOutputTokens: sumUsage(workflows, "outputTokens"),
+      estimatedTotalTokens: sumUsage(workflows, "totalTokens")
     };
   }
 
@@ -587,6 +606,52 @@ export class Gateway {
       timestamp: stamp
     };
   }
+
+  private estimateTaskUsage(workflow: WorkflowRecord, task: TaskRecord): TokenUsage {
+    const dependencyOutput = task.dependencyTaskId
+      ? workflow.tasks.find((entry) => entry.id === task.dependencyTaskId)?.output ?? ""
+      : "";
+
+    const inputChars =
+      workflow.prompt.length + task.description.length + dependencyOutput.length;
+    const outputChars = (task.output ?? "").length;
+    const inputTokens = estimateTokens(inputChars);
+    const outputTokens = estimateTokens(outputChars);
+    const cacheRead = dependencyOutput
+      ? Math.max(0, Math.round(estimateTokens(dependencyOutput.length) * 0.35))
+      : 0;
+
+    return {
+      source: "estimated",
+      inputTokens,
+      outputTokens,
+      cacheRead,
+      cacheWrite: 0,
+      totalTokens: inputTokens + outputTokens + cacheRead
+    };
+  }
+
+  private aggregateWorkflowUsage(workflow: WorkflowRecord): TokenUsage {
+    const usages = workflow.tasks
+      .map((task) => task.usage)
+      .filter((usage): usage is TokenUsage => usage !== null);
+
+    if (usages.length === 0) {
+      return emptyTokenUsage();
+    }
+
+    return usages.reduce<TokenUsage>(
+      (total, usage) => ({
+        source: usage.source,
+        inputTokens: total.inputTokens + usage.inputTokens,
+        outputTokens: total.outputTokens + usage.outputTokens,
+        cacheRead: total.cacheRead + usage.cacheRead,
+        cacheWrite: total.cacheWrite + usage.cacheWrite,
+        totalTokens: total.totalTokens + usage.totalTokens
+      }),
+      emptyTokenUsage()
+    );
+  }
 }
 
 export const buildGateway = (seed: AgentRecord[], options?: GatewayOptions) =>
@@ -599,6 +664,12 @@ const average = (values: number[]) => {
 
   return Math.round(values.reduce((sum, value) => sum + value, 0) / values.length);
 };
+
+const sumUsage = (workflows: WorkflowRecord[], key: keyof TokenUsage) =>
+  workflows.reduce((total, workflow) => {
+    const value = workflow.usage?.[key];
+    return total + (typeof value === "number" ? value : 0);
+  }, 0);
 
 const summarisePrompt = (prompt: string) =>
   prompt.length > 68 ? `${prompt.slice(0, 65)}...` : prompt;
@@ -618,6 +689,8 @@ const extractKeywords = (prompt: string) => {
 };
 
 const timestamp = () => new Date().toISOString();
+
+const estimateTokens = (charCount: number) => Math.max(0, Math.round(charCount / 4));
 
 const createId = (prefix: string) =>
   `${prefix}-${Math.random().toString(36).slice(2, 8)}-${Date.now().toString(36)}`;

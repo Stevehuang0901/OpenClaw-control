@@ -27,6 +27,7 @@ export type GatewayEventType =
   | "handoff_started"
   | "handoff_finished"
   | "workflow_completed"
+  | "openclaw_status_updated"
   | "metrics_updated";
 
 export interface DeskPosition {
@@ -53,6 +54,15 @@ export interface TaskHistoryEntry {
   actorId: string | null;
 }
 
+export interface TokenUsage {
+  source: "reported" | "estimated";
+  inputTokens: number;
+  outputTokens: number;
+  cacheRead: number;
+  cacheWrite: number;
+  totalTokens: number;
+}
+
 export interface TaskRecord {
   id: string;
   workflowId: string;
@@ -67,6 +77,7 @@ export interface TaskRecord {
   startedAt: string | null;
   completedAt: string | null;
   handoffAt: string | null;
+  usage: TokenUsage | null;
   history: TaskHistoryEntry[];
 }
 
@@ -78,6 +89,7 @@ export interface WorkflowRecord {
   createdAt: string;
   updatedAt: string;
   finalOutput: string | null;
+  usage: TokenUsage | null;
   tasks: TaskRecord[];
 }
 
@@ -114,6 +126,70 @@ export interface MetricSnapshot {
   pendingTasks: number;
   averageHandoffMs: number;
   averageCycleMs: number;
+  estimatedInputTokens: number;
+  estimatedOutputTokens: number;
+  estimatedTotalTokens: number;
+}
+
+export interface OpenClawProviderWindow {
+  label: string;
+  usedPercent: number;
+  resetAt: number | null;
+}
+
+export interface OpenClawProviderUsage {
+  provider: string;
+  displayName: string;
+  plan: string | null;
+  windows: OpenClawProviderWindow[];
+}
+
+export interface OpenClawSessionUsage {
+  agentId: string;
+  key: string;
+  kind: string;
+  sessionId: string;
+  updatedAt: number;
+  ageMs: number | null;
+  inputTokens: number;
+  outputTokens: number;
+  cacheRead: number;
+  cacheWrite: number;
+  totalTokens: number;
+  totalTokensFresh: boolean;
+  remainingTokens: number | null;
+  percentUsed: number | null;
+  model: string | null;
+  contextTokens: number | null;
+}
+
+export interface OpenClawGatewayStatus {
+  mode: string | null;
+  url: string | null;
+  reachable: boolean;
+  connectLatencyMs: number | null;
+  error: string | null;
+}
+
+export interface OpenClawUsageTotals {
+  recentSessionCount: number;
+  inputTokens: number;
+  outputTokens: number;
+  cacheRead: number;
+  cacheWrite: number;
+  totalTokens: number;
+  averagePercentUsed: number;
+}
+
+export interface OpenClawStatusSnapshot {
+  available: boolean;
+  source: "cli" | "unavailable";
+  updatedAt: string | null;
+  error: string | null;
+  providers: OpenClawProviderUsage[];
+  recentSessions: OpenClawSessionUsage[];
+  totals: OpenClawUsageTotals;
+  gateway: OpenClawGatewayStatus;
 }
 
 export interface SystemSnapshot {
@@ -123,6 +199,7 @@ export interface SystemSnapshot {
   messages: MessageRecord[];
   handoffs: HandoffRecord[];
   metrics: MetricSnapshot;
+  openclaw: OpenClawStatusSnapshot;
 }
 
 export interface GatewayEvent<T = unknown> {
@@ -134,6 +211,40 @@ export interface GatewayEvent<T = unknown> {
 export interface CreateWorkflowInput {
   prompt: string;
 }
+
+export const emptyTokenUsage = (): TokenUsage => ({
+  source: "estimated",
+  inputTokens: 0,
+  outputTokens: 0,
+  cacheRead: 0,
+  cacheWrite: 0,
+  totalTokens: 0
+});
+
+export const emptyOpenClawStatus = (): OpenClawStatusSnapshot => ({
+  available: false,
+  source: "unavailable",
+  updatedAt: null,
+  error: null,
+  providers: [],
+  recentSessions: [],
+  totals: {
+    recentSessionCount: 0,
+    inputTokens: 0,
+    outputTokens: 0,
+    cacheRead: 0,
+    cacheWrite: 0,
+    totalTokens: 0,
+    averagePercentUsed: 0
+  },
+  gateway: {
+    mode: null,
+    url: null,
+    reachable: false,
+    connectLatencyMs: null,
+    error: null
+  }
+});
 
 export const roleMeta: Record<
   AgentRole,

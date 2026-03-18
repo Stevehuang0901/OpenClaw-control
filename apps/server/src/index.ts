@@ -6,6 +6,7 @@ import express from "express";
 import { Server } from "socket.io";
 
 import { buildGateway } from "./core/gateway";
+import { fetchOpenClawStatus } from "./core/openclawMonitor";
 import { seedAgents } from "./data/seedAgents";
 
 const gateway = buildGateway(seedAgents());
@@ -25,6 +26,10 @@ app.get("/api/health", (_request, response) => {
 
 app.get("/api/state", (_request, response) => {
   response.json(gateway.getSnapshot());
+});
+
+app.get("/api/openclaw/status", (_request, response) => {
+  response.json(gateway.getSnapshot().openclaw);
 });
 
 app.post("/api/workflows", (request, response) => {
@@ -78,6 +83,15 @@ gateway.subscribe(
 const port = Number(process.env.PORT ?? 8787);
 server.listen(port, () => {
   gateway.bootstrapDemo();
+  void refreshOpenClawStatus();
+  setInterval(() => {
+    void refreshOpenClawStatus();
+  }, 60_000);
   // eslint-disable-next-line no-console
   console.log(`ClawControl gateway listening on http://localhost:${port}`);
 });
+
+const refreshOpenClawStatus = async () => {
+  const status = await fetchOpenClawStatus();
+  gateway.setOpenClawStatus(status);
+};

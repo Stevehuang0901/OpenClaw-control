@@ -1,4 +1,4 @@
-import { formatDuration } from "../lib/format";
+import { formatDuration, formatNumber } from "../lib/format";
 import type { MetricSnapshot } from "../types/contracts";
 
 interface MetricStripProps {
@@ -26,11 +26,23 @@ export function MetricStrip({ metrics }: MetricStripProps) {
       label: "Avg Cycle",
       value: formatDuration(metrics.averageCycleMs),
       note: "Request to final validation"
+    },
+    {
+      label: "Est Tokens",
+      value: formatNumber(metrics.estimatedTotalTokens),
+      note: "Summed across workflow steps"
+    },
+    {
+      label: "Est I/O",
+      value: `${formatNumber(metrics.estimatedInputTokens)} / ${formatNumber(
+        metrics.estimatedOutputTokens
+      )}`,
+      note: "Input and output token estimate"
     }
   ];
 
   return (
-    <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
       {cards.map((card) => (
         <article
           key={card.label}

@@ -1,4 +1,4 @@
-import { formatClock, truncate } from "../lib/format";
+import { formatClock, formatNumber, truncate } from "../lib/format";
 import { taskStatusLabel, taskStatusTone } from "../lib/status";
 import type { AgentRecord, WorkflowRecord } from "../types/contracts";
 
@@ -51,6 +51,9 @@ export function WorkflowPanel({ workflows, agents }: WorkflowPanelProps) {
               <div className="text-right text-xs uppercase tracking-[0.18em] text-ink/60">
                 <div>{workflow.status}</div>
                 <div className="mt-2">Updated {formatClock(workflow.updatedAt)}</div>
+                <div className="mt-2">
+                  {workflow.usage ? `${formatNumber(workflow.usage.totalTokens)} tok est` : "--"}
+                </div>
               </div>
             </div>
 
@@ -80,7 +83,11 @@ export function WorkflowPanel({ workflows, agents }: WorkflowPanelProps) {
                   </p>
                   <div className="mt-3 flex items-center justify-between text-xs uppercase tracking-[0.18em] text-ink/55">
                     <span>{agentById.get(task.ownerAgentId ?? "") ?? "Gateway queue"}</span>
-                    <span>{formatClock(task.completedAt ?? task.startedAt)}</span>
+                    <span>
+                      {task.usage
+                        ? `${formatNumber(task.usage.totalTokens)} tok`
+                        : formatClock(task.completedAt ?? task.startedAt)}
+                    </span>
                   </div>
                 </div>
               ))}

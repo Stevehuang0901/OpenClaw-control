@@ -9,6 +9,7 @@ ClawControl is a full end-to-end multi-agent control room built for OpenClaw-sty
 - Broadcasts live snapshots and event logs over Socket.IO.
 - Visualizes the office as a retro pixel workspace with animated task packets between desks.
 - Shows workflow queue state, task ownership, final output, metrics, and agent-to-agent messages.
+- Polls `openclaw status --usage --json` to display real OpenClaw provider quota, recent session token usage, cache reads, and gateway reachability.
 
 ## Stack
 
@@ -48,6 +49,8 @@ This starts:
 
 The backend seeds demo workflows automatically a few seconds after boot so the office starts moving immediately.
 
+If the `openclaw` CLI is installed on the host, the dashboard also pulls live usage data from your local OpenClaw environment every 60 seconds.
+
 ## Production build
 
 ```bash
@@ -68,6 +71,7 @@ After `npm run build`, the backend serves the built dashboard from `dist/web`.
 
 - `GET /api/health` basic health check.
 - `GET /api/state` returns the latest full gateway snapshot.
+- `GET /api/openclaw/status` returns the latest OpenClaw usage snapshot gathered from the local CLI.
 - `POST /api/workflows` creates a new workflow.
 
 Request body:
@@ -90,6 +94,18 @@ Each workflow is split into four ordered tasks:
 Task states move through:
 
 `pending -> in_progress -> done -> handed_off -> completed`
+
+## OpenClaw usage monitoring
+
+The dashboard now exposes two usage layers:
+
+- Workflow estimates: each simulated task and workflow includes estimated token usage so you can compare relative workload between desks.
+- Real OpenClaw usage: the server polls `openclaw status --usage --json` and surfaces:
+  - provider quota windows
+  - recent session `inputTokens`, `outputTokens`, `cacheRead`, and `totalTokens`
+  - gateway reachability and latency
+
+This aligns with the OpenClaw CLI and the OpenResponses API, where provider-reported `usage` is populated when the underlying model returns token counts.
 
 ## GitHub submission
 
