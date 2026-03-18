@@ -8,6 +8,8 @@ import { GatewayOpsPanel } from "./components/GatewayOpsPanel";
 import { MetricStrip } from "./components/MetricStrip";
 import { MissionControlPanel } from "./components/MissionControlPanel";
 import { OpenClawUsagePanel } from "./components/OpenClawUsagePanel";
+import { OfficeStoryPanel } from "./components/OfficeStoryPanel";
+import { OverviewDeck } from "./components/OverviewDeck";
 import {
   OperationsSidebar,
   type DashboardPage
@@ -393,9 +395,18 @@ function renderPageContent(input: {
             onSubmit={onSubmit}
           />
 
+          <OfficeStoryPanel
+            agents={snapshot.agents}
+            approvals={snapshot.approvals}
+            messages={snapshot.messages}
+            selectedWorkflowId={selectedWorkflowId}
+            workflows={snapshot.workflows}
+          />
+
           <OfficeScene
             agents={snapshot.agents}
             approvals={snapshot.approvals}
+            selectedWorkflowId={selectedWorkflowId}
             workflows={snapshot.workflows}
             handoffs={snapshot.handoffs}
             messages={snapshot.messages}
@@ -409,8 +420,10 @@ function renderPageContent(input: {
             />
             <EventFeed
               agents={snapshot.agents}
+              approvals={snapshot.approvals}
               events={events}
               messages={snapshot.messages}
+              workflows={snapshot.workflows}
             />
           </div>
         </div>
@@ -419,6 +432,13 @@ function renderPageContent(input: {
     case "dashboard":
       return (
         <div className="space-y-6">
+          <OverviewDeck
+            agents={snapshot.agents}
+            approvals={snapshot.approvals}
+            openclaw={snapshot.openclaw}
+            selectedWorkflowId={selectedWorkflowId}
+            workflows={snapshot.workflows}
+          />
           <MetricStrip metrics={snapshot.metrics} />
           <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
             <TaskBoardPanel
@@ -454,8 +474,10 @@ function renderPageContent(input: {
           />
           <EventFeed
             agents={snapshot.agents}
+            approvals={snapshot.approvals}
             events={events}
             messages={snapshot.messages}
+            workflows={snapshot.workflows}
           />
         </div>
       );

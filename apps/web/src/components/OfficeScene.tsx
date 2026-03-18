@@ -1,7 +1,8 @@
 import type { CSSProperties } from "react";
 
-import { truncate } from "../lib/format";
+import { formatClock, truncate } from "../lib/format";
 import { resolveAgentSceneState } from "../lib/office";
+import { getWorkflowProgress } from "../lib/workflows";
 import { roleMeta } from "../types/contracts";
 import type {
   AgentRecord,
@@ -15,6 +16,7 @@ import type {
 interface OfficeSceneProps {
   agents: AgentRecord[];
   approvals: ApprovalRecord[];
+  selectedWorkflowId: string | null;
   workflows: WorkflowRecord[];
   handoffs: HandoffRecord[];
   messages: MessageRecord[];
@@ -23,6 +25,7 @@ interface OfficeSceneProps {
 export function OfficeScene({
   agents,
   approvals,
+  selectedWorkflowId,
   workflows,
   handoffs,
   messages
@@ -30,6 +33,18 @@ export function OfficeScene({
   const tasks = workflows.flatMap((workflow) => workflow.tasks);
   const taskById = new Map(tasks.map((task) => [task.id, task]));
   const agentById = new Map(agents.map((agent) => [agent.id, agent]));
+  const focusWorkflow =
+    workflows.find((workflow) => workflow.id === selectedWorkflowId) ??
+    workflows.find((workflow) => workflow.status === "running") ??
+    workflows[0] ??
+    null;
+  const focusProgress = focusWorkflow ? getWorkflowProgress(focusWorkflow) : null;
+  const focusTask = focusProgress?.activeTask ?? null;
+  const focusNextTask = focusProgress?.nextTask ?? null;
+  const focusAgent =
+    focusTask?.ownerAgentId
+      ? agentById.get(focusTask.ownerAgentId) ?? null
+      : null;
   const latestApproved =
     [...approvals]
       .filter((approval) => approval.status === "approved" && approval.decidedAt)
@@ -87,6 +102,36 @@ export function OfficeScene({
         <div className="office-route office-route-lounge-left" />
         <div className="office-route office-route-lounge-right" />
         <div className="office-lounge-sign">Idle mode lounge</div>
+        {focusWorkflow ? (
+          <div className="office-storyboard">
+            <div className="office-storyboard-header">
+              <span className="pixel-label">Scene board</span>
+              <span>{focusWorkflow.status}</span>
+            </div>
+            <div className="office-storyboard-body">
+              <p className="office-storyboard-title">{focusWorkflow.summary}</p>
+              <p className="office-storyboard-copy">
+                {focusTask
+                  ? `${focusAgent?.name ?? "A desk"} is on ${focusTask.title}.`
+                  : focusNextTask
+                    ? `${focusNextTask.title} is the next beat waiting to fire.`
+                    : "The office is between beats right now."}
+              </p>
+              <div className="office-storyboard-meta">
+                <span>
+                  {focusTask
+                    ? `${roleMeta[focusTask.role].label} · ${formatClock(
+                        focusTask.startedAt ?? focusWorkflow.updatedAt
+                      )}`
+                    : `Updated ${formatClock(focusWorkflow.updatedAt)}`}
+                </span>
+                <span>
+                  {focusProgress?.completedTasks ?? 0}/{focusProgress?.totalTasks ?? 0} settled
+                </span>
+              </div>
+            </div>
+          </div>
+        ) : null}
         <div className="office-rug" />
         <div className="office-card-table" />
         <div className="office-card-deck" />

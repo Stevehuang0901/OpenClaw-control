@@ -10,6 +10,7 @@ ClawControl is a full end-to-end multi-agent control room built for OpenClaw-sty
 - Broadcasts live snapshots and event logs over Socket.IO.
 - Visualizes the office as a retro pixel night-shift workspace with animated task packets, walking lobster agents, idle lounge behaviors like cards, mahjong, arcade, and naps, plus clearer walk paths, louder collaboration bubbles, and approval celebration effects.
 - Splits the UI into a cleaner multi-page dashboard shell: the Office page is the live workspace, while dashboard, activity, approvals, operations, and skills each live on their own page.
+- Adds explanation layers so the UI is easier to read: the Dashboard page now has a stronger overview deck, the Office page includes a narrative panel for the current mission, and the Activity page is presented as an operations timeline.
 - Shows workflow queue state, task ownership, kanban board state, final output, metrics, approvals, and agent-to-agent messages without forcing every panel onto one long screen.
 - Polls `openclaw status --usage --json` to display real OpenClaw provider quota, recent session token usage, cache reads, and gateway reachability.
 - Adds a gateway probe panel with explicit `ws://` / `wss://` port validation and live connection checks.
