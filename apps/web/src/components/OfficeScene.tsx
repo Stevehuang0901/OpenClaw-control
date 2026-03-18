@@ -69,105 +69,33 @@ export function OfficeScene({
   const activeRequests = workflows.filter(
     (workflow) => workflow.status !== "completed"
   ).length;
-  const liveMessages = messages.slice(0, 4);
+  const liveMessages = messages.slice(0, 3);
+  const lobsterMood = latestApproved
+    ? {
+        mode: "celebrating",
+        label: "Celebrating",
+        detail: "A release just landed and the claws are throwing sparks."
+      }
+    : focusTask
+      ? {
+          mode: "working",
+          label: "Working",
+          detail: "The crew is back at their desks and moving the current packet."
+        }
+      : focusNextTask
+        ? {
+            mode: "standby",
+            label: "On standby",
+            detail: "The next packet is queued, so the floor is waiting for the cue."
+          }
+        : {
+            mode: "idle",
+            label: "Idle",
+            detail: "The office is off-duty: cards, naps, and arcade breaks are on."
+          };
 
   return (
     <section className="panel overflow-hidden">
-      <div className="flex items-center justify-between border-b-2 border-ink/15 px-5 py-4">
-        <div>
-          <p className="pixel-label">Office Flow</p>
-          <h2 className="mt-2 text-2xl font-bold text-ink">
-            Animated night-shift office
-          </h2>
-        </div>
-        <div className="flex flex-wrap items-center gap-2 text-xs text-ink">
-          <div className="rounded-none border-2 border-ink/15 bg-[#15101d] px-3 py-2 shadow-pixel">
-            {handoffs.length} packets in transit
-          </div>
-          <div className="rounded-none border-2 border-ink/15 bg-[#100d17] px-3 py-2 shadow-pixel">
-            {activeRequests} live requests
-          </div>
-        </div>
-      </div>
-
-      <div className="office-scene-topbar">
-        {focusWorkflow ? (
-          <article className="office-scene-brief">
-            <div className="office-scene-brief-header">
-              <span className="pixel-label">Scene board</span>
-              <span>{focusWorkflow.status}</span>
-            </div>
-            <div className="office-scene-brief-body">
-              <p className="office-scene-brief-title">{focusWorkflow.summary}</p>
-              <p className="office-scene-brief-copy">
-                {focusTask
-                  ? `${focusAgent?.name ?? "A desk"} is on ${focusTask.title}.`
-                  : focusNextTask
-                    ? `${focusNextTask.title} is queued as the next beat.`
-                    : "The office is between beats right now."}
-              </p>
-            </div>
-          </article>
-        ) : (
-          <article className="office-scene-brief office-scene-brief-empty">
-            <div className="office-scene-brief-header">
-              <span className="pixel-label">Scene board</span>
-              <span>idle</span>
-            </div>
-            <div className="office-scene-brief-body">
-              <p className="office-scene-brief-title">Waiting for the next mission</p>
-              <p className="office-scene-brief-copy">
-                Submit a request from the Office console and the floor will switch
-                from idle mode into live desk work.
-              </p>
-            </div>
-          </article>
-        )}
-
-        <div className="office-scene-summary">
-          <SceneStatCard
-            label="Current beat"
-            value={focusTask ? focusTask.title : "Between beats"}
-            detail={
-              focusTask
-                ? `${roleMeta[focusTask.role].label} at ${focusAgent?.name ?? "assigned desk"}`
-                : "No desk is actively working right now."
-            }
-          />
-          <SceneStatCard
-            label="Next"
-            value={focusNextTask ? focusNextTask.title : "No queued follow-up"}
-            detail={
-              focusNextTask
-                ? `${roleMeta[focusNextTask.role].label} will take the next packet.`
-                : focusApproval?.status === "pending"
-                  ? "Release approval is waiting on a decision."
-                  : "The queue is currently clear."
-            }
-          />
-          <SceneStatCard
-            label="Release"
-            value={focusApproval ? focusApproval.status : "not opened"}
-            detail={
-              focusApproval
-                ? truncate(focusApproval.summary, 82)
-                : latestApproved
-                  ? `Latest ship: ${truncate(latestApproved.title, 48)}`
-                  : "No approval packet has been opened yet."
-            }
-            tone={
-              focusApproval?.status === "approved"
-                ? "mint"
-                : focusApproval?.status === "rejected"
-                  ? "coral"
-                  : focusApproval?.status === "pending"
-                    ? "brass"
-                    : "neutral"
-            }
-          />
-        </div>
-      </div>
-
       <div className="office-stage">
         <div className="office-wall" />
         <div className="office-sunbeam" />
@@ -192,6 +120,22 @@ export function OfficeScene({
         <div className="office-beanbag" />
         <div className="office-plant office-plant-left" />
         <div className="office-plant office-plant-right" />
+        <div className={`office-lobster-mascot office-lobster-mascot-${lobsterMood.mode}`}>
+          <div
+            className={`pixel-lobster office-lobster-mascot-figure office-lobster-mascot-figure-${lobsterMood.mode}`}
+          >
+            <span className="pixel-lobster-claw pixel-lobster-claw-left" />
+            <span className="pixel-lobster-claw pixel-lobster-claw-right" />
+            <span className="pixel-lobster-body" />
+            <span className="pixel-lobster-tail" />
+            <span className="pixel-lobster-eye pixel-lobster-eye-left" />
+            <span className="pixel-lobster-eye pixel-lobster-eye-right" />
+          </div>
+          <div className="office-lobster-mascot-tag">
+            <span>OpenClaw lobster</span>
+            <strong>{lobsterMood.label}</strong>
+          </div>
+        </div>
         {celebrationAgent && latestApproved ? (
           <>
             <div
@@ -359,6 +303,68 @@ export function OfficeScene({
         })}
       </div>
 
+      <div className="office-scene-topbar">
+        <article className="office-scene-brief">
+          <div className="office-scene-brief-header">
+            <span className="pixel-label">Office Flow</span>
+            <span>{focusWorkflow ? focusWorkflow.status : "idle"}</span>
+          </div>
+          <div className="office-scene-brief-body">
+            <p className="office-scene-brief-title">
+              {focusWorkflow ? focusWorkflow.summary : "Waiting for the next mission"}
+            </p>
+            <p className="office-scene-brief-copy">
+              {focusTask
+                ? `${focusAgent?.name ?? "A desk"} is on ${focusTask.title}.`
+                : focusNextTask
+                  ? `${focusNextTask.title} is queued as the next beat.`
+                  : "The office is between beats right now."}
+            </p>
+            <div className="office-scene-brief-meta">
+              <span>
+                {focusTask
+                  ? `${roleMeta[focusTask.role].label} · ${formatClock(
+                      focusTask.startedAt ?? focusWorkflow?.updatedAt ?? null
+                    )}`
+                  : `Updated ${formatClock(focusWorkflow?.updatedAt ?? null)}`}
+              </span>
+              <span>
+                {focusProgress?.completedTasks ?? 0}/{focusProgress?.totalTasks ?? 0} settled
+              </span>
+              <span>{handoffs.length} packets in transit</span>
+            </div>
+          </div>
+        </article>
+
+        <article className="office-lobster-spotlight">
+          <div className="office-scene-brief-header">
+            <span className="pixel-label">OpenClaw lobster</span>
+            <span>{lobsterMood.label}</span>
+          </div>
+          <div className="office-lobster-spotlight-body">
+            <div className="office-lobster-hero-frame" aria-hidden="true">
+              <div className="pixel-lobster office-lobster-hero">
+                <span className="pixel-lobster-claw pixel-lobster-claw-left" />
+                <span className="pixel-lobster-claw pixel-lobster-claw-right" />
+                <span className="pixel-lobster-body" />
+                <span className="pixel-lobster-tail" />
+                <span className="pixel-lobster-eye pixel-lobster-eye-left" />
+                <span className="pixel-lobster-eye pixel-lobster-eye-right" />
+              </div>
+            </div>
+            <div className="office-lobster-spotlight-copy">
+              <p className="office-lobster-title">{lobsterMood.label}</p>
+              <p className="office-lobster-copy">{lobsterMood.detail}</p>
+              <div className="office-lobster-tags">
+                <span>{focusTask ? `${roleMeta[focusTask.role].label} desk` : "idle floor"}</span>
+                <span>{focusApproval ? focusApproval.status : "no approval"}</span>
+                <span>{activeRequests} live requests</span>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+
       <div className="office-radio-panel">
         <div className="office-radio-header">
           <span className="pixel-label">Collab Radio</span>
@@ -373,7 +379,7 @@ export function OfficeScene({
                   {agentById.get(message.toAgentId)?.name ?? "Gateway"}
                 </span>
                 <span className="office-radio-copy">
-                  {truncate(message.payload, 92)}
+                  {truncate(message.payload, 84)}
                 </span>
               </div>
             ))
@@ -393,32 +399,3 @@ export function OfficeScene({
 
 const packetLabel = (task: TaskRecord | undefined) =>
   task ? `${task.role.slice(0, 3).toUpperCase()}` : "PKT";
-
-function SceneStatCard({
-  label,
-  value,
-  detail,
-  tone = "neutral"
-}: {
-  label: string;
-  value: string;
-  detail: string;
-  tone?: "mint" | "coral" | "brass" | "neutral";
-}) {
-  const toneClass =
-    tone === "mint"
-      ? "office-scene-card-mint"
-      : tone === "coral"
-        ? "office-scene-card-coral"
-        : tone === "brass"
-          ? "office-scene-card-brass"
-          : "";
-
-  return (
-    <article className={`office-scene-card ${toneClass}`}>
-      <p className="office-scene-card-label">{label}</p>
-      <p className="office-scene-card-value">{value}</p>
-      <p className="office-scene-card-detail">{detail}</p>
-    </article>
-  );
-}

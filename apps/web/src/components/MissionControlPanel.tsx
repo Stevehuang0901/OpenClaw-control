@@ -2,23 +2,20 @@ import { formatClock, formatNumber, truncate } from "../lib/format";
 import { taskStatusLabel, taskStatusTone } from "../lib/status";
 import {
   buildWorkflowOutputPreview,
-  getWorkflowMessages,
   getWorkflowProgress,
   getWorkflowSignalLine
 } from "../lib/workflows";
-import type { MessageRecord, WorkflowRecord } from "../types/contracts";
+import type { WorkflowRecord } from "../types/contracts";
 
 interface MissionControlPanelProps {
   connected: boolean;
   error: string | null;
-  messages: MessageRecord[];
   prompt: string;
   selectedWorkflowId: string | null;
   submitting: boolean;
   workflows: WorkflowRecord[];
   onPromptChange: (value: string) => void;
   onRestoreStarter: () => void;
-  onSelectWorkflow: (workflowId: string) => void;
   onSubmit: () => void;
 }
 
@@ -31,43 +28,35 @@ const promptSuggestions = [
 export function MissionControlPanel({
   connected,
   error,
-  messages,
   prompt,
   selectedWorkflowId,
   submitting,
   workflows,
   onPromptChange,
   onRestoreStarter,
-  onSelectWorkflow,
   onSubmit
 }: MissionControlPanelProps) {
   const selectedWorkflow =
     workflows.find((workflow) => workflow.id === selectedWorkflowId) ??
     workflows[0] ??
     null;
-  const recentWorkflows = [...workflows]
-    .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
-    .slice(0, 5);
   const progress = selectedWorkflow
     ? getWorkflowProgress(selectedWorkflow)
     : null;
-  const workflowMessages = selectedWorkflow
-    ? getWorkflowMessages(selectedWorkflow, messages)
-    : [];
 
   return (
     <section className="panel p-5">
-      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+      <div className="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
         <div className="rounded-none border-2 border-ink/15 bg-[#130f1b] p-5 shadow-pixel">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="max-w-2xl">
               <p className="pixel-label">Operator Console</p>
               <h2 className="mt-3 text-3xl font-bold text-ink sm:text-4xl">
-                Send one clear request
+                Send a mission to the floor
               </h2>
               <p className="mt-4 text-sm leading-relaxed text-ink/70">
-                Describe the outcome you want. The gateway will split it into desk
-                work, route the handoffs, and stream the output back here.
+                Write the task once. The gateway will route it through the crew,
+                and the output will come back here as it finishes.
               </p>
             </div>
 
@@ -90,8 +79,8 @@ export function MissionControlPanel({
                 </span>
               </div>
               <p className="mt-3 text-xs leading-relaxed text-ink/58">
-                Type a request, submit it, then follow the crew below as they pick
-                up the work.
+                Type a request, submit it, and watch the crew move in the office
+                above.
               </p>
             </div>
           </div>
@@ -132,7 +121,7 @@ export function MissionControlPanel({
               id="workflow-prompt"
               value={prompt}
               onChange={(event) => onPromptChange(event.target.value)}
-              className="min-h-[190px] w-full rounded-none border-2 border-ink/20 bg-[#0d0a13] px-4 py-4 text-base leading-relaxed text-ink shadow-pixel outline-none transition focus:border-teal"
+              className="min-h-[160px] w-full rounded-none border-2 border-ink/20 bg-[#0d0a13] px-4 py-4 text-base leading-relaxed text-ink shadow-pixel outline-none transition focus:border-teal"
               placeholder="Describe the task you want the crew to execute..."
             />
 
@@ -300,91 +289,23 @@ export function MissionControlPanel({
                   </div>
                 </div>
 
-                <div className="grid gap-4 xl:grid-cols-[0.86fr_1.14fr]">
-                  <div className="rounded-none border-2 border-ink/15 bg-[#120e19] p-4 shadow-pixel">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="pixel-label">Recent Missions</p>
-                      <span className="text-[10px] uppercase tracking-[0.18em] text-ink/48">
-                        {recentWorkflows.length} listed
-                      </span>
-                    </div>
-                    <div className="mt-4 space-y-3">
-                      {recentWorkflows.map((workflow) => (
-                        <button
-                          key={workflow.id}
-                          type="button"
-                          className={`w-full rounded-none border-2 px-3 py-3 text-left shadow-pixel transition hover:-translate-y-0.5 ${
-                            workflow.id === selectedWorkflow.id
-                              ? "border-teal/50 bg-[#21192c]"
-                              : "border-ink/12 bg-[#14101c] hover:border-ink/36"
-                          }`}
-                          onClick={() => onSelectWorkflow(workflow.id)}
-                        >
-                          <div className="flex items-center justify-between gap-3">
-                            <span className="text-[10px] uppercase tracking-[0.18em] text-ink/48">
-                              {workflow.status}
-                            </span>
-                            <span className="text-[10px] uppercase tracking-[0.18em] text-ink/40">
-                              {formatClock(workflow.updatedAt)}
-                            </span>
-                          </div>
-                          <p className="mt-2 text-sm font-bold text-ink">
-                            {truncate(workflow.summary, 56)}
-                          </p>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="rounded-none border-2 border-ink bg-[#07050a] p-4 text-ink shadow-pixel">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="pixel-label text-ink/55">Output Screen</p>
-                        <p className="mt-2 text-sm text-ink/72">
-                          {selectedWorkflow.finalOutput
-                            ? "Final delivery package"
-                            : "Live assembly feed"}
-                        </p>
-                      </div>
-                      <span className="rounded-none border-2 border-ink/20 bg-[#14101c] px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-ink/72">
-                        {selectedWorkflow.finalOutput ? "complete" : "streaming"}
-                      </span>
-                    </div>
-                    <pre className="mt-4 max-h-[420px] overflow-auto whitespace-pre-wrap border-2 border-ink/15 bg-black/20 p-4 text-sm leading-relaxed text-ink/88">
-                      {buildWorkflowOutputPreview(selectedWorkflow)}
-                    </pre>
-                  </div>
-                </div>
-
-                <div className="rounded-none border-2 border-ink/15 bg-[#120e19] p-4 shadow-pixel">
+                <div className="rounded-none border-2 border-ink bg-[#07050a] p-4 text-ink shadow-pixel">
                   <div className="flex items-center justify-between gap-3">
-                    <p className="pixel-label">Latest Desk Notes</p>
-                    <span className="text-[10px] uppercase tracking-[0.18em] text-ink/48">
-                      {workflowMessages.length} visible
+                    <div>
+                      <p className="pixel-label text-ink/55">Output Screen</p>
+                      <p className="mt-2 text-sm text-ink/72">
+                        {selectedWorkflow.finalOutput
+                          ? "Final delivery package"
+                          : "Live assembly feed"}
+                      </p>
+                    </div>
+                    <span className="rounded-none border-2 border-ink/20 bg-[#14101c] px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-ink/72">
+                      {selectedWorkflow.finalOutput ? "complete" : "streaming"}
                     </span>
                   </div>
-                  <div className="mt-4 grid gap-3 md:grid-cols-3">
-                    {workflowMessages.length > 0 ? (
-                      workflowMessages.map((message) => (
-                        <article
-                          key={message.id}
-                          className="rounded-none border-2 border-ink/15 bg-[#14101c] p-3 shadow-pixel"
-                        >
-                          <p className="text-[10px] uppercase tracking-[0.22em] text-ink/50">
-                            {message.kind}
-                          </p>
-                          <p className="mt-2 text-sm leading-relaxed text-ink/76">
-                            {truncate(message.payload, 120)}
-                          </p>
-                        </article>
-                      ))
-                    ) : (
-                      <div className="rounded-none border-2 border-dashed border-ink/15 bg-[#110d18] p-4 text-sm text-ink/58 md:col-span-3">
-                        Collaboration notes will appear here once the desks begin
-                        passing packets around.
-                      </div>
-                    )}
-                  </div>
+                  <pre className="mt-4 max-h-[320px] overflow-auto whitespace-pre-wrap border-2 border-ink/15 bg-black/20 p-4 text-sm leading-relaxed text-ink/88">
+                    {buildWorkflowOutputPreview(selectedWorkflow)}
+                  </pre>
                 </div>
               </>
             ) : (

@@ -80,7 +80,7 @@ const pageMeta: Record<
     kicker: "Office",
     title: "Live office floor",
     description:
-      "Main workspace for entering tasks, watching the crew move, and seeing the current delivery form in real time."
+      "Main floor for live requests. The lobster crew and output screen are the first things you see."
   },
   dashboard: {
     kicker: "Dashboard",
@@ -200,6 +200,10 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [activePage]);
+
+  useEffect(() => {
     if (snapshot.workflows.length === 0) {
       if (selectedWorkflowId !== null) {
         setSelectedWorkflowId(null);
@@ -257,6 +261,7 @@ export default function App() {
   };
 
   const hero = pageMeta[activePage];
+  const isOfficePage = activePage === "office";
   const content = renderPageContent({
     activePage,
     connected,
@@ -287,15 +292,29 @@ export default function App() {
           onSelectPage={navigateToPage}
         />
 
-        <main className="space-y-6">
+        <main className={isOfficePage ? "space-y-4" : "space-y-6"}>
           <header className="panel overflow-hidden">
-            <div className="grid gap-5 px-5 py-5 xl:grid-cols-[1.1fr_0.9fr]">
+            <div
+              className={`grid gap-5 px-5 py-5 ${
+                isOfficePage
+                  ? "xl:grid-cols-[1.15fr_0.85fr]"
+                  : "xl:grid-cols-[1.1fr_0.9fr]"
+              }`}
+            >
               <div>
                 <p className="pixel-label">{hero.kicker}</p>
-                <h1 className="mt-3 text-4xl font-bold tracking-tight text-ink sm:text-5xl">
+                <h1
+                  className={`mt-3 font-bold tracking-tight text-ink ${
+                    isOfficePage ? "text-3xl sm:text-4xl" : "text-4xl sm:text-5xl"
+                  }`}
+                >
                   {hero.title}
                 </h1>
-                <p className="mt-4 max-w-4xl text-base leading-relaxed text-ink/70">
+                <p
+                  className={`mt-4 max-w-4xl leading-relaxed text-ink/70 ${
+                    isOfficePage ? "text-sm" : "text-base"
+                  }`}
+                >
                   {hero.description}
                 </p>
               </div>
@@ -305,11 +324,13 @@ export default function App() {
                   label="Gateway"
                   value={connected ? "online" : "offline"}
                   note={`${snapshot.metrics.runningWorkflows} workflows moving`}
+                  compact={isOfficePage}
                 />
                 <HeaderCard
                   label="Approvals"
                   value={String(snapshot.metrics.pendingApprovals)}
                   note="Release packages waiting"
+                  compact={isOfficePage}
                 />
                 <HeaderCard
                   label="OpenClaw"
@@ -319,6 +340,7 @@ export default function App() {
                       ? "Gateway reachable"
                       : "Probe recommended"
                   }
+                  compact={isOfficePage}
                 />
               </div>
             </div>
@@ -334,17 +356,31 @@ export default function App() {
 function HeaderCard({
   label,
   value,
-  note
+  note,
+  compact = false
 }: {
   label: string;
   value: string;
   note: string;
+  compact?: boolean;
 }) {
   return (
-    <article className="rounded-none border-2 border-ink/12 bg-[#15101d] px-4 py-4 shadow-pixel">
-      <p className="text-[10px] uppercase tracking-[0.24em] text-ink/48">{label}</p>
-      <p className="mt-2 text-2xl font-bold text-ink">{value}</p>
-      <p className="mt-3 text-sm text-ink/60">{note}</p>
+    <article
+      className={`rounded-none border-2 border-ink/12 bg-[#15101d] shadow-pixel ${
+        compact ? "px-3 py-3" : "px-4 py-4"
+      }`}
+    >
+      <p
+        className={`uppercase tracking-[0.24em] text-ink/48 ${
+          compact ? "text-[9px]" : "text-[10px]"
+        }`}
+      >
+        {label}
+      </p>
+      <p className={`mt-2 font-bold text-ink ${compact ? "text-xl" : "text-2xl"}`}>
+        {value}
+      </p>
+      <p className={`mt-3 text-ink/60 ${compact ? "text-xs" : "text-sm"}`}>{note}</p>
     </article>
   );
 }
@@ -382,27 +418,6 @@ function renderPageContent(input: {
     case "office":
       return (
         <div className="space-y-6">
-          <MissionControlPanel
-            connected={connected}
-            error={error}
-            messages={snapshot.messages}
-            prompt={prompt}
-            selectedWorkflowId={selectedWorkflowId}
-            submitting={submitting}
-            workflows={snapshot.workflows}
-            onPromptChange={onPromptChange}
-            onRestoreStarter={onRestoreStarter}
-            onSelectWorkflow={onSelectWorkflow}
-            onSubmit={onSubmit}
-          />
-
-          <OfficeStoryPanel
-            agents={snapshot.agents}
-            approvals={snapshot.approvals}
-            selectedWorkflowId={selectedWorkflowId}
-            workflows={snapshot.workflows}
-          />
-
           <OfficeScene
             agents={snapshot.agents}
             approvals={snapshot.approvals}
@@ -412,11 +427,24 @@ function renderPageContent(input: {
             messages={snapshot.messages}
           />
 
-          <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-            <AgentRoster
+          <MissionControlPanel
+            connected={connected}
+            error={error}
+            prompt={prompt}
+            selectedWorkflowId={selectedWorkflowId}
+            submitting={submitting}
+            workflows={snapshot.workflows}
+            onPromptChange={onPromptChange}
+            onRestoreStarter={onRestoreStarter}
+            onSubmit={onSubmit}
+          />
+
+          <div className="grid gap-6 xl:grid-cols-[1.02fr_0.98fr]">
+            <OfficeStoryPanel
               agents={snapshot.agents}
+              approvals={snapshot.approvals}
+              selectedWorkflowId={selectedWorkflowId}
               workflows={snapshot.workflows}
-              handoffs={snapshot.handoffs}
             />
             <CollaborationPanel
               agents={snapshot.agents}
@@ -425,6 +453,12 @@ function renderPageContent(input: {
               workflows={snapshot.workflows}
             />
           </div>
+
+          <AgentRoster
+            agents={snapshot.agents}
+            workflows={snapshot.workflows}
+            handoffs={snapshot.handoffs}
+          />
         </div>
       );
 

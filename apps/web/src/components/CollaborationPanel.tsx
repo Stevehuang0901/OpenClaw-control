@@ -26,8 +26,8 @@ export function CollaborationPanel({
   const notes = focusWorkflow
     ? messages
         .filter((message) => message.workflowId === focusWorkflow.id)
-        .slice(0, 6)
-    : messages.slice(0, 6);
+        .slice(0, 4)
+    : messages.slice(0, 4);
 
   return (
     <section className="panel p-5">
@@ -36,8 +36,8 @@ export function CollaborationPanel({
           <p className="pixel-label">Collaboration</p>
           <h2 className="mt-2 text-2xl font-bold text-ink">Desk radio</h2>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink/66">
-            Lightweight collaboration view for the Office page. This stays focused
-            on the current mission while the full ops timeline lives on Activity.
+            Short desk-to-desk notes for the current mission. The full ops
+            timeline still lives on Activity.
           </p>
         </div>
         <div className="rounded-none border-2 border-ink/15 bg-[#15101d] px-4 py-3 shadow-pixel">
@@ -62,7 +62,7 @@ export function CollaborationPanel({
           return (
             <article
               key={message.id}
-              className="rounded-none border-2 border-ink/15 bg-[#14101c] p-4 shadow-pixel"
+              className="rounded-none border-2 border-ink/15 bg-[#14101c] p-3 shadow-pixel"
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
@@ -87,7 +87,7 @@ export function CollaborationPanel({
               </div>
 
               <p className="mt-3 text-sm leading-relaxed text-ink/74">
-                {truncate(message.payload, 180)}
+                {truncate(message.payload, 150)}
               </p>
             </article>
           );

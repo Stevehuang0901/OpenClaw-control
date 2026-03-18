@@ -34,8 +34,8 @@ export function AgentRoster({
           <p className="pixel-label">Agents</p>
           <h2 className="mt-2 text-2xl font-bold text-ink">Crew roster</h2>
           <p className="mt-3 max-w-xl text-sm leading-relaxed text-ink/66">
-            Each card answers three things quickly: what this agent is doing, where
-            they are, and which workflow they belong to.
+            Each card only keeps the essentials: what the agent is doing and
+            which workflow it belongs to.
           </p>
         </div>
         <div className="rounded-none border-2 border-ink/15 bg-[#15101d] px-4 py-3 shadow-pixel">
@@ -98,10 +98,6 @@ export function AgentRoster({
                       ? `${task.title} (${task.status.replace("_", " ")})`
                       : scene.activityDetail
                   }
-                />
-                <RosterLine
-                  label="Where"
-                  value={task ? `At desk · ${scene.activityLabel}` : scene.activityLabel}
                 />
                 <RosterLine
                   label="Workflow"
