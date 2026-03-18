@@ -68,6 +68,16 @@ The Office page is designed as a playable-looking office map rather than a singl
 
 The lobster agents are rendered inside those rooms so the animation reads more like a small game map or dollhouse office layout, while the right-side Mission Control and output panels stay focused on the currently running workflow.
 
+## Project preview
+
+### Office map
+
+![ClawControl office map](./image.png)
+
+### Mission control and output
+
+![ClawControl mission control and output](./image2.png)
+
 If the `openclaw` CLI is installed and configured on the host, workflow steps are executed through real OpenClaw agent turns and the dashboard also pulls live usage data every 60 seconds.
 
 If you want the old auto-demo behavior back for presentations, start the server with:
