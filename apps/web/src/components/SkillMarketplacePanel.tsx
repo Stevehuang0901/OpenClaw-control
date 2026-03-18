@@ -271,6 +271,10 @@ export function SkillMarketplacePanel() {
           <h2 className="mt-2 text-2xl font-bold text-ink">
             Manage ClawHub skills end to end
           </h2>
+          <p className="mt-3 max-w-3xl text-sm leading-relaxed text-ink/66">
+            Search the catalog, inspect `SKILL.md`, and install or update managed
+            skills without leaving the dashboard.
+          </p>
         </div>
         <button
           type="button"
@@ -291,6 +295,24 @@ export function SkillMarketplacePanel() {
           label="Managed installs"
           value={formatNumber(managed.skills.length)}
           note={`Stored in ${truncate(managed.managedSkillsDir || "~/.openclaw/skills", 42)}`}
+        />
+      </div>
+
+      <div className="mt-5 grid gap-3 sm:grid-cols-3">
+        <StepCard
+          index="01"
+          title="Search"
+          detail="Look up skills from ClawHub with quick queries or a custom search."
+        />
+        <StepCard
+          index="02"
+          title="Inspect"
+          detail="Open the inspector to read `SKILL.md`, changelog, and security notes."
+        />
+        <StepCard
+          index="03"
+          title="Manage"
+          detail="Install, update, or uninstall managed skills from the same page."
         />
       </div>
 
@@ -345,9 +367,10 @@ export function SkillMarketplacePanel() {
       <div className="mt-5 grid gap-6 xl:grid-cols-[1.1fr_1fr]">
         <div className="space-y-6">
           <div>
-            <p className="text-xs uppercase tracking-[0.25em] text-ink/55">
-              Managed installs
-            </p>
+            <SectionHeading
+              title="Managed installs"
+              detail="Installed into the managed OpenClaw skills directory."
+            />
             <div className="mt-3 space-y-3">
               {loadingManaged ? (
                 <EmptyState message="Loading managed skills..." />
@@ -410,9 +433,10 @@ export function SkillMarketplacePanel() {
           </div>
 
           <div>
-            <p className="text-xs uppercase tracking-[0.25em] text-ink/55">
-              Search results
-            </p>
+            <SectionHeading
+              title="Search results"
+              detail="Catalog skills that can be inspected and installed."
+            />
             <div className="mt-3 space-y-3">
               {!searching && query.trim() && results.length === 0 ? (
                 <EmptyState message={`No catalog matches for "${query}".`} />
@@ -481,9 +505,10 @@ export function SkillMarketplacePanel() {
           </div>
 
           <div>
-            <p className="text-xs uppercase tracking-[0.25em] text-ink/55">
-              Other local skills
-            </p>
+            <SectionHeading
+              title="Other local skills"
+              detail="Detected in the workspace or personal directories, but not managed by ClawHub."
+            />
             <div className="mt-3 space-y-3">
               {loadingSkills ? <EmptyState message="Loading OpenClaw skill inventory..." /> : null}
 
@@ -521,7 +546,10 @@ export function SkillMarketplacePanel() {
         </div>
 
         <div>
-          <p className="text-xs uppercase tracking-[0.25em] text-ink/55">Skill inspector</p>
+          <SectionHeading
+            title="Skill inspector"
+            detail="Read the selected skill before installing or updating it."
+          />
           <div className="mt-3">
             {detailLoading ? <EmptyState message="Loading skill detail..." /> : null}
 
@@ -624,6 +652,39 @@ function StatCard({ label, value, note }: StatCardProps) {
       <p className="text-[10px] uppercase tracking-[0.22em] text-ink/55">{label}</p>
       <p className="mt-2 text-2xl font-bold text-ink">{value}</p>
       <p className="mt-2 text-xs text-ink/65">{note}</p>
+    </div>
+  );
+}
+
+function StepCard({
+  index,
+  title,
+  detail
+}: {
+  index: string;
+  title: string;
+  detail: string;
+}) {
+  return (
+    <div className="rounded-none border-2 border-ink/15 bg-[#14101c] p-3 shadow-pixel">
+      <p className="text-[10px] uppercase tracking-[0.22em] text-ink/48">{index}</p>
+      <p className="mt-2 text-sm font-bold text-ink">{title}</p>
+      <p className="mt-2 text-sm leading-relaxed text-ink/62">{detail}</p>
+    </div>
+  );
+}
+
+function SectionHeading({
+  title,
+  detail
+}: {
+  title: string;
+  detail: string;
+}) {
+  return (
+    <div>
+      <p className="text-xs uppercase tracking-[0.25em] text-ink/55">{title}</p>
+      <p className="mt-2 text-sm leading-relaxed text-ink/60">{detail}</p>
     </div>
   );
 }

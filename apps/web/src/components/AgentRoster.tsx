@@ -1,9 +1,9 @@
+import { truncate } from "../lib/format";
 import { resolveAgentSceneState } from "../lib/office";
 import { roleMeta } from "../types/contracts";
 import type {
   AgentRecord,
   HandoffRecord,
-  TaskRecord,
   WorkflowRecord
 } from "../types/contracts";
 
@@ -20,6 +20,12 @@ export function AgentRoster({
 }: AgentRosterProps) {
   const tasks = workflows.flatMap((workflow) => workflow.tasks);
   const taskById = new Map(tasks.map((task) => [task.id, task]));
+  const workflowById = new Map(workflows.map((workflow) => [workflow.id, workflow]));
+  const sortedAgents = [...agents].sort((left, right) => {
+    const leftScore = left.status === "thinking" ? 0 : left.status === "handoff" ? 1 : 2;
+    const rightScore = right.status === "thinking" ? 0 : right.status === "handoff" ? 1 : 2;
+    return leftScore - rightScore;
+  });
 
   return (
     <section className="panel p-5">
@@ -27,6 +33,10 @@ export function AgentRoster({
         <div>
           <p className="pixel-label">Agents</p>
           <h2 className="mt-2 text-2xl font-bold text-ink">Crew roster</h2>
+          <p className="mt-3 max-w-xl text-sm leading-relaxed text-ink/66">
+            Each card answers three things quickly: what this agent is doing, where
+            they are, and which workflow they belong to.
+          </p>
         </div>
         <div className="rounded-none border-2 border-ink/15 bg-[#15101d] px-4 py-3 shadow-pixel">
           <p className="text-[10px] uppercase tracking-[0.24em] text-ink/48">
@@ -39,9 +49,10 @@ export function AgentRoster({
       </div>
 
       <div className="mt-5 space-y-3">
-        {agents.map((agent, index) => {
+        {sortedAgents.map((agent, index) => {
           const task =
             (agent.currentTaskId ? taskById.get(agent.currentTaskId) : null) ?? null;
+          const workflow = task ? workflowById.get(task.workflowId) ?? null : null;
           const scene = resolveAgentSceneState(
             agent,
             index,
@@ -70,23 +81,40 @@ export function AgentRoster({
                       ? "bg-brass/18 text-brass"
                       : agent.status === "handoff"
                         ? "bg-coral/18 text-coral"
-                        : "bg-mint/18 text-mint"
+                        : agent.status === "idle"
+                          ? "bg-[#0f0c15] text-ink/68"
+                          : "bg-mint/18 text-mint"
                   }`}
                 >
                   {agent.status}
                 </span>
               </div>
-              <div className="mt-3 flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-ink/48">
-                <span className="rounded-none border-2 border-ink/15 bg-[#0f0c15] px-2 py-1">
-                  {scene.activityLabel}
-                </span>
-                <span>{roleMeta[agent.role].label}</span>
+
+              <div className="mt-4 grid gap-2">
+                <RosterLine
+                  label="Now"
+                  value={
+                    task
+                      ? `${task.title} (${task.status.replace("_", " ")})`
+                      : scene.activityDetail
+                  }
+                />
+                <RosterLine
+                  label="Where"
+                  value={task ? `At desk · ${scene.activityLabel}` : scene.activityLabel}
+                />
+                <RosterLine
+                  label="Workflow"
+                  value={
+                    workflow
+                      ? truncate(workflow.summary, 72)
+                      : "No active workflow assigned"
+                  }
+                />
               </div>
-              <p className="mt-3 text-sm leading-relaxed text-ink/68">
-                {task ? renderTaskLine(task) : scene.activityDetail}
-              </p>
+
               <div className="mt-3 flex items-center justify-between text-xs uppercase tracking-[0.18em] text-ink/52">
-                <span>{agent.id}</span>
+                <span>{truncate(agent.id, 18)}</span>
                 <span>{agent.completedTasks} completed</span>
               </div>
             </article>
@@ -97,5 +125,17 @@ export function AgentRoster({
   );
 }
 
-const renderTaskLine = (task: TaskRecord) =>
-  `${task.title} for workflow ${task.workflowId.slice(0, 10)} is currently ${task.status.replace("_", " ")}.`;
+function RosterLine({
+  label,
+  value
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-none border-2 border-ink/12 bg-[#0f0c15] px-3 py-2">
+      <p className="text-[10px] uppercase tracking-[0.18em] text-ink/46">{label}</p>
+      <p className="mt-2 text-sm leading-relaxed text-ink/72">{value}</p>
+    </div>
+  );
+}

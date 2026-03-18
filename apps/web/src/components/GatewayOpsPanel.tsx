@@ -72,9 +72,8 @@ export function GatewayOpsPanel({ openclaw }: GatewayOpsPanelProps) {
           <p className="pixel-label">Gateway Ops</p>
           <h2 className="mt-2 text-2xl font-bold text-ink">Probe and configure</h2>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink/70">
-            Borrowed from the imported mission-control pattern, but adapted for
-            this pixel dashboard: validate a `ws://` or `wss://` endpoint, require
-            an explicit port, and inspect the latest live gateway status in one panel.
+            Use this when the gateway looks stale or you need to confirm a specific
+            `ws://` or `wss://` endpoint is actually reachable.
           </p>
         </div>
         <div className="rounded-none border-2 border-ink/15 bg-[#15101d] px-4 py-3 shadow-pixel">
@@ -85,6 +84,28 @@ export function GatewayOpsPanel({ openclaw }: GatewayOpsPanelProps) {
             {openclaw.gateway.url ?? "No URL detected from OpenClaw CLI yet"}
           </p>
         </div>
+      </div>
+
+      <div className="mt-5 grid gap-3 sm:grid-cols-3">
+        <OpsCard
+          label="Reachable"
+          value={openclaw.gateway.reachable ? "Yes" : "No"}
+          note="Detected from the latest OpenClaw status snapshot."
+        />
+        <OpsCard
+          label="Latency"
+          value={
+            typeof openclaw.gateway.connectLatencyMs === "number"
+              ? `${openclaw.gateway.connectLatencyMs}ms`
+              : "--"
+          }
+          note="Round-trip time from the most recent gateway check."
+        />
+        <OpsCard
+          label="Mode"
+          value={openclaw.gateway.mode ?? "--"}
+          note="The mode reported by the local OpenClaw CLI."
+        />
       </div>
 
       <div className="mt-5 grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
@@ -141,7 +162,7 @@ export function GatewayOpsPanel({ openclaw }: GatewayOpsPanelProps) {
                 disabled={busy}
                 onClick={() => void probeGateway()}
               >
-                {busy ? "Probing..." : "Probe gateway"}
+                {busy ? "Probing..." : "Run probe"}
               </button>
               <button
                 type="button"
@@ -153,7 +174,7 @@ export function GatewayOpsPanel({ openclaw }: GatewayOpsPanelProps) {
                   setGatewayAllowInsecureTls(false);
                 }}
               >
-                Use detected URL
+                Use detected settings
               </button>
             </div>
 
@@ -164,8 +185,8 @@ export function GatewayOpsPanel({ openclaw }: GatewayOpsPanelProps) {
             ) : null}
 
             <div className="rounded-none border-2 border-ink/15 bg-[#0f0c15] px-4 py-3 text-sm leading-relaxed text-ink/60">
-              Explicit port is required, matching the imported mission-control
-              behavior. Example: `ws://localhost:3001` or `wss://gateway.example.com:443`.
+              Use an explicit port. Example: `ws://localhost:3001` or
+              `wss://gateway.example.com:443`.
             </div>
           </div>
         </div>
@@ -187,9 +208,10 @@ export function GatewayOpsPanel({ openclaw }: GatewayOpsPanelProps) {
                     : "--"
                 }
               />
+              <ProbeLine label="Updated" value={formatDateTime(openclaw.updatedAt)} />
               <ProbeLine
-                label="Updated"
-                value={formatDateTime(openclaw.updatedAt)}
+                label="URL"
+                value={openclaw.gateway.url ?? "No detected URL"}
               />
             </div>
 
@@ -230,21 +252,37 @@ export function GatewayOpsPanel({ openclaw }: GatewayOpsPanelProps) {
                     label="Insecure TLS"
                     value={result.gatewayAllowInsecureTls ? "Allowed" : "Off"}
                   />
-                  <ProbeLine
-                    label="Checked"
-                    value={formatDateTime(result.checkedAt)}
-                  />
+                  <ProbeLine label="Checked" value={formatDateTime(result.checkedAt)} />
                 </div>
               </div>
             ) : (
               <div className="mt-4 rounded-none border-2 border-dashed border-ink/15 px-4 py-8 text-sm text-ink/52">
-                No manual probe yet. Run one to verify the target endpoint from the dashboard.
+                No manual probe yet. Run one from the form on the left to verify a
+                target endpoint before you rely on it.
               </div>
             )}
           </article>
         </div>
       </div>
     </section>
+  );
+}
+
+function OpsCard({
+  label,
+  value,
+  note
+}: {
+  label: string;
+  value: string;
+  note: string;
+}) {
+  return (
+    <div className="rounded-none border-2 border-ink/15 bg-[#14101c] p-3 shadow-pixel">
+      <p className="text-[10px] uppercase tracking-[0.22em] text-ink/48">{label}</p>
+      <p className="mt-2 text-xl font-bold text-ink">{value}</p>
+      <p className="mt-2 text-xs leading-relaxed text-ink/60">{note}</p>
+    </div>
   );
 }
 

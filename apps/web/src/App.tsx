@@ -15,6 +15,7 @@ import {
   type DashboardPage
 } from "./components/OperationsSidebar";
 import { SkillMarketplacePanel } from "./components/SkillMarketplacePanel";
+import { CollaborationPanel } from "./components/CollaborationPanel";
 import { OfficeScene } from "./components/OfficeScene";
 import { TaskBoardPanel } from "./components/TaskBoardPanel";
 import { WorkflowPanel } from "./components/WorkflowPanel";
@@ -398,7 +399,6 @@ function renderPageContent(input: {
           <OfficeStoryPanel
             agents={snapshot.agents}
             approvals={snapshot.approvals}
-            messages={snapshot.messages}
             selectedWorkflowId={selectedWorkflowId}
             workflows={snapshot.workflows}
           />
@@ -418,11 +418,10 @@ function renderPageContent(input: {
               workflows={snapshot.workflows}
               handoffs={snapshot.handoffs}
             />
-            <EventFeed
+            <CollaborationPanel
               agents={snapshot.agents}
-              approvals={snapshot.approvals}
-              events={events}
               messages={snapshot.messages}
+              selectedWorkflowId={selectedWorkflowId}
               workflows={snapshot.workflows}
             />
           </div>
