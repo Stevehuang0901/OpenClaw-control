@@ -274,7 +274,7 @@ export function SkillMarketplacePanel() {
         </div>
         <button
           type="button"
-          className="rounded-none border-2 border-ink bg-paper px-3 py-2 text-xs uppercase tracking-[0.18em] text-ink shadow-pixel"
+          className="rounded-none border-2 border-ink/15 bg-[#15101d] px-3 py-2 text-xs uppercase tracking-[0.18em] text-ink shadow-pixel"
           onClick={() => void refreshAll()}
         >
           Refresh
@@ -305,12 +305,12 @@ export function SkillMarketplacePanel() {
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            className="flex-1 rounded-none border-2 border-ink bg-white/80 px-4 py-3 text-sm text-ink shadow-pixel outline-none transition focus:border-teal"
+            className="flex-1 rounded-none border-2 border-ink/20 bg-[#0f0c15] px-4 py-3 text-sm text-ink shadow-pixel outline-none transition focus:border-teal"
             placeholder="Search ClawHub skills like calendar, github, automation..."
           />
           <button
             type="submit"
-            className="rounded-none border-2 border-ink bg-coral px-5 py-3 text-sm font-bold uppercase tracking-[0.2em] text-paper shadow-pixel"
+            className="rounded-none border-2 border-ink bg-coral px-5 py-3 text-sm font-bold uppercase tracking-[0.2em] text-[#14090a] shadow-pixel"
             disabled={searching}
           >
             {searching ? "Searching..." : "Search"}
@@ -321,7 +321,7 @@ export function SkillMarketplacePanel() {
             <button
               key={suggestion}
               type="button"
-              className="rounded-none border-2 border-ink/20 bg-paper px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-ink/70"
+              className="rounded-none border-2 border-ink/15 bg-[#14101c] px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-ink/70"
               onClick={() => void runSearch(suggestion)}
             >
               {suggestion}
@@ -360,7 +360,7 @@ export function SkillMarketplacePanel() {
               {managed.skills.map((skill) => (
                 <article
                   key={skill.slug}
-                  className="rounded-none border-2 border-ink bg-paper/75 p-4 shadow-pixel"
+                  className="rounded-none border-2 border-ink/15 bg-[#14101c] p-4 shadow-pixel"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
@@ -369,7 +369,7 @@ export function SkillMarketplacePanel() {
                         {skill.version ?? "unknown version"}
                       </p>
                     </div>
-                    <span className="rounded-none border-2 border-ink bg-mint/35 px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-ink">
+                    <span className="rounded-none border-2 border-mint/45 bg-mint/15 px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-mint">
                       installed
                     </span>
                   </div>
@@ -425,7 +425,7 @@ export function SkillMarketplacePanel() {
               {results.map((item) => (
                 <article
                   key={item.slug}
-                  className="rounded-none border-2 border-ink bg-paper/75 p-4 shadow-pixel"
+                  className="rounded-none border-2 border-ink/15 bg-[#14101c] p-4 shadow-pixel"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
@@ -436,8 +436,10 @@ export function SkillMarketplacePanel() {
                       </p>
                     </div>
                     <span
-                      className={`rounded-none border-2 border-ink px-2 py-1 text-[10px] uppercase tracking-[0.16em] ${
-                        item.installed ? "bg-mint/35 text-ink" : "bg-paper text-ink"
+                      className={`rounded-none border-2 px-2 py-1 text-[10px] uppercase tracking-[0.16em] ${
+                        item.installed
+                          ? "border-mint/45 bg-mint/15 text-mint"
+                          : "border-ink/20 bg-[#0f0c15] text-ink"
                       }`}
                     >
                       {item.installed ? "installed" : "catalog"}
@@ -492,7 +494,7 @@ export function SkillMarketplacePanel() {
               {otherLocalSkills.map((skill) => (
                 <article
                   key={skill.name}
-                  className="rounded-none border-2 border-ink/15 bg-white/60 p-3"
+                  className="rounded-none border-2 border-ink/15 bg-[#14101c] p-3"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
@@ -502,8 +504,10 @@ export function SkillMarketplacePanel() {
                       </p>
                     </div>
                     <span
-                      className={`rounded-none border-2 border-ink px-2 py-1 text-[10px] uppercase tracking-[0.16em] ${
-                        skill.eligible ? "bg-mint/35 text-ink" : "bg-brass/20 text-brass"
+                      className={`rounded-none border-2 px-2 py-1 text-[10px] uppercase tracking-[0.16em] ${
+                        skill.eligible
+                          ? "border-mint/45 bg-mint/15 text-mint"
+                          : "border-brass/45 bg-brass/14 text-brass"
                       }`}
                     >
                       {skill.eligible ? "ready" : "needs setup"}
@@ -532,7 +536,7 @@ export function SkillMarketplacePanel() {
             ) : null}
 
             {detail ? (
-              <article className="rounded-none border-2 border-ink bg-paper/80 p-4 shadow-pixel">
+              <article className="rounded-none border-2 border-ink/15 bg-[#14101c] p-4 shadow-pixel">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-xl font-bold text-ink">{detail.displayName}</p>
@@ -541,8 +545,10 @@ export function SkillMarketplacePanel() {
                     </p>
                   </div>
                   <span
-                    className={`rounded-none border-2 border-ink px-2 py-1 text-[10px] uppercase tracking-[0.16em] ${
-                      detail.installed ? "bg-mint/35 text-ink" : "bg-paper text-ink"
+                    className={`rounded-none border-2 px-2 py-1 text-[10px] uppercase tracking-[0.16em] ${
+                      detail.installed
+                        ? "border-mint/45 bg-mint/15 text-mint"
+                        : "border-ink/20 bg-[#0f0c15] text-ink"
                     }`}
                   >
                     {detail.installed ? "installed" : "catalog"}
@@ -559,7 +565,7 @@ export function SkillMarketplacePanel() {
                 </div>
 
                 {detail.security ? (
-                  <div className="mt-4 rounded-none border-2 border-brass bg-brass/10 p-3 text-sm text-ink/75">
+                  <div className="mt-4 rounded-none border-2 border-brass/45 bg-brass/10 p-3 text-sm text-ink/75">
                     <p className="text-xs uppercase tracking-[0.18em] text-ink/55">
                       Security check
                     </p>
@@ -583,7 +589,7 @@ export function SkillMarketplacePanel() {
                     <p className="text-xs uppercase tracking-[0.18em] text-ink/55">
                       Changelog
                     </p>
-                    <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-none border-2 border-ink/15 bg-white/60 p-3 text-sm text-ink/75">
+                    <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-none border-2 border-ink/15 bg-[#0f0c15] p-3 text-sm text-ink/75">
                       {detail.changelog}
                     </pre>
                   </div>
@@ -593,7 +599,7 @@ export function SkillMarketplacePanel() {
                   <p className="text-xs uppercase tracking-[0.18em] text-ink/55">
                     SKILL.md
                   </p>
-                  <pre className="mt-2 max-h-[34rem] overflow-auto whitespace-pre-wrap rounded-none border-2 border-ink bg-white/75 p-4 text-sm leading-relaxed text-ink">
+                  <pre className="mt-2 max-h-[34rem] overflow-auto whitespace-pre-wrap rounded-none border-2 border-ink/15 bg-[#0f0c15] p-4 text-sm leading-relaxed text-ink">
                     {detail.skillMdContent ?? "No SKILL.md content was available."}
                   </pre>
                 </div>
@@ -614,7 +620,7 @@ interface StatCardProps {
 
 function StatCard({ label, value, note }: StatCardProps) {
   return (
-    <div className="rounded-none border-2 border-ink bg-paper/70 p-3 shadow-pixel">
+    <div className="rounded-none border-2 border-ink/15 bg-[#14101c] p-3 shadow-pixel">
       <p className="text-[10px] uppercase tracking-[0.22em] text-ink/55">{label}</p>
       <p className="mt-2 text-2xl font-bold text-ink">{value}</p>
       <p className="mt-2 text-xs text-ink/65">{note}</p>
@@ -632,15 +638,15 @@ interface ActionButtonProps {
 function ActionButton({ label, tone, disabled, onClick }: ActionButtonProps) {
   const toneClasses =
     tone === "teal"
-      ? "bg-teal text-paper"
+      ? "bg-teal text-[#071111]"
       : tone === "coral"
-        ? "bg-coral text-paper"
-        : "bg-paper text-ink";
+        ? "bg-coral text-[#14090a]"
+        : "bg-[#15101d] text-ink";
 
   return (
     <button
       type="button"
-      className={`rounded-none border-2 border-ink px-3 py-2 text-xs font-bold uppercase tracking-[0.16em] shadow-pixel disabled:cursor-not-allowed disabled:bg-slate disabled:text-white/70 ${toneClasses}`}
+      className={`rounded-none border-2 border-ink px-3 py-2 text-xs font-bold uppercase tracking-[0.16em] shadow-pixel disabled:cursor-not-allowed disabled:bg-slate disabled:text-ink/40 ${toneClasses}`}
       disabled={disabled}
       onClick={onClick}
     >
@@ -651,7 +657,7 @@ function ActionButton({ label, tone, disabled, onClick }: ActionButtonProps) {
 
 function EmptyState({ message }: { message: string }) {
   return (
-    <div className="rounded-none border-2 border-dashed border-ink/20 p-4 text-sm text-ink/60">
+    <div className="rounded-none border-2 border-dashed border-ink/15 bg-[#110d18] p-4 text-sm text-ink/60">
       {message}
     </div>
   );

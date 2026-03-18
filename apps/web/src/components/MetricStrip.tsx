@@ -10,34 +10,40 @@ export function MetricStrip({ metrics }: MetricStripProps) {
     {
       label: "Workflows",
       value: `${metrics.completedWorkflows}/${metrics.totalWorkflows}`,
-      note: `${metrics.runningWorkflows} currently active`
+      note: `${metrics.runningWorkflows} active now`,
+      accent: "bg-teal/14"
     },
     {
-      label: "Tasks Completed",
+      label: "Tasks Settled",
       value: metrics.tasksCompleted.toString(),
-      note: `${metrics.pendingTasks} pending in queue`
+      note: `${metrics.pendingTasks} still queued`,
+      accent: "bg-brass/14"
+    },
+    {
+      label: "Approvals",
+      value: metrics.pendingApprovals.toString(),
+      note: "Release desk backlog",
+      accent: "bg-coral/14"
     },
     {
       label: "Avg Handoff",
       value: formatDuration(metrics.averageHandoffMs),
-      note: "Desk to desk travel time"
+      note: "Desk-to-desk packet travel",
+      accent: "bg-mint/14"
     },
     {
       label: "Avg Cycle",
       value: formatDuration(metrics.averageCycleMs),
-      note: "Request to final validation"
+      note: "Prompt to final package",
+      accent: "bg-[#83a0ff]/14"
     },
     {
       label: "Est Tokens",
       value: formatNumber(metrics.estimatedTotalTokens),
-      note: "Summed across workflow steps"
-    },
-    {
-      label: "Est I/O",
-      value: `${formatNumber(metrics.estimatedInputTokens)} / ${formatNumber(
+      note: `${formatNumber(metrics.estimatedInputTokens)} in / ${formatNumber(
         metrics.estimatedOutputTokens
-      )}`,
-      note: "Input and output token estimate"
+      )} out`,
+      accent: "bg-[#b992f8]/14"
     }
   ];
 
@@ -46,11 +52,11 @@ export function MetricStrip({ metrics }: MetricStripProps) {
       {cards.map((card) => (
         <article
           key={card.label}
-          className="panel p-4"
+          className={`panel p-4 ${card.accent}`}
         >
           <p className="pixel-label">{card.label}</p>
           <p className="mt-2 text-3xl font-bold text-ink">{card.value}</p>
-          <p className="mt-2 text-sm text-ink/70">{card.note}</p>
+          <p className="mt-3 text-sm text-ink/68">{card.note}</p>
         </article>
       ))}
     </section>

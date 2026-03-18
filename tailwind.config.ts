@@ -9,17 +9,19 @@ export default {
   theme: {
     extend: {
       colors: {
-        ink: "#20142f",
-        paper: "#f7ecd8",
-        brass: "#d98b42",
-        teal: "#257179",
-        mint: "#9ed1b5",
-        coral: "#da6a58",
-        slate: "#40505f"
+        ink: "#f5e6bf",
+        paper: "#16121f",
+        brass: "#e3a05f",
+        teal: "#58b2a9",
+        mint: "#94d67f",
+        coral: "#ea7a72",
+        slate: "#778094",
+        void: "#09070d",
+        smoke: "#21192c"
       },
       boxShadow: {
-        pixel: "0 0 0 2px #20142f, 6px 6px 0 0 rgba(32, 20, 47, 0.22)",
-        insetPixel: "inset 0 0 0 2px #20142f"
+        pixel: "0 0 0 2px #f5e6bf, 6px 6px 0 0 rgba(0, 0, 0, 0.48)",
+        insetPixel: "inset 0 0 0 2px #f5e6bf"
       },
       backgroundImage: {
         plaid:

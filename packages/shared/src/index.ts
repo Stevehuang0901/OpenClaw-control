@@ -14,10 +14,12 @@ export const TASK_STATUSES = [
 ] as const;
 
 export const AGENT_STATUSES = ["idle", "thinking", "handoff"] as const;
+export const APPROVAL_STATUSES = ["pending", "approved", "rejected"] as const;
 
 export type AgentRole = (typeof AGENT_ROLES)[number];
 export type TaskStatus = (typeof TASK_STATUSES)[number];
 export type AgentStatus = (typeof AGENT_STATUSES)[number];
+export type ApprovalStatus = (typeof APPROVAL_STATUSES)[number];
 
 export type WorkflowStatus = "queued" | "running" | "completed";
 export type GatewayEventType =
@@ -27,6 +29,7 @@ export type GatewayEventType =
   | "handoff_started"
   | "handoff_finished"
   | "workflow_completed"
+  | "approval_updated"
   | "openclaw_status_updated"
   | "metrics_updated";
 
@@ -118,12 +121,27 @@ export interface HandoffRecord {
   durationMs: number;
 }
 
+export interface ApprovalRecord {
+  id: string;
+  workflowId: string;
+  taskId: string;
+  title: string;
+  summary: string;
+  status: ApprovalStatus;
+  confidence: number;
+  createdAt: string;
+  decidedAt: string | null;
+  decisionNote: string | null;
+  reviewer: string | null;
+}
+
 export interface MetricSnapshot {
   totalWorkflows: number;
   completedWorkflows: number;
   runningWorkflows: number;
   tasksCompleted: number;
   pendingTasks: number;
+  pendingApprovals: number;
   averageHandoffMs: number;
   averageCycleMs: number;
   estimatedInputTokens: number;
@@ -294,10 +312,30 @@ export interface SkillDetailRecord {
   security: SkillSecuritySummary | null;
 }
 
+export interface GatewayProbeInput {
+  gatewayUrl: string;
+  gatewayToken?: string;
+  gatewayDisableDevicePairing: boolean;
+  gatewayAllowInsecureTls: boolean;
+}
+
+export interface GatewayProbeResult {
+  checkedAt: string;
+  gatewayUrl: string;
+  reachable: boolean;
+  connectLatencyMs: number | null;
+  secure: boolean;
+  tokenSupplied: boolean;
+  gatewayDisableDevicePairing: boolean;
+  gatewayAllowInsecureTls: boolean;
+  message: string;
+}
+
 export interface SystemSnapshot {
   generatedAt: string;
   agents: AgentRecord[];
   workflows: WorkflowRecord[];
+  approvals: ApprovalRecord[];
   messages: MessageRecord[];
   handoffs: HandoffRecord[];
   metrics: MetricSnapshot;

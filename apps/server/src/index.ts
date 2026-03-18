@@ -5,8 +5,10 @@ import cors from "cors";
 import express from "express";
 import { Server } from "socket.io";
 
+import { APPROVAL_STATUSES } from "../../../packages/shared/src/index";
 import { buildGateway } from "./core/gateway";
 import { createOpenClawTaskExecutor } from "./core/openclawExecutor";
+import { probeGatewayConnection, validateGatewayUrl } from "./core/gatewayProbe";
 import { fetchOpenClawStatus } from "./core/openclawMonitor";
 import {
   getCatalogSkillDetail,
@@ -43,6 +45,74 @@ app.get("/api/state", (_request, response) => {
 
 app.get("/api/openclaw/status", (_request, response) => {
   response.json(gateway.getSnapshot().openclaw);
+});
+
+app.get("/api/approvals", (_request, response) => {
+  response.json(gateway.getSnapshot().approvals);
+});
+
+app.post("/api/approvals/:approvalId", (request, response) => {
+  const status = typeof request.body?.status === "string" ? request.body.status : "";
+  const reviewer =
+    typeof request.body?.reviewer === "string" ? request.body.reviewer : null;
+  const decisionNote =
+    typeof request.body?.decisionNote === "string" ? request.body.decisionNote : null;
+
+  if (!APPROVAL_STATUSES.includes(status as (typeof APPROVAL_STATUSES)[number])) {
+    response.status(400).json({
+      error: "status must be one of pending, approved, or rejected"
+    });
+    return;
+  }
+
+  const approval = gateway.updateApproval({
+    approvalId: request.params.approvalId,
+    status,
+    reviewer,
+    decisionNote
+  });
+
+  if (!approval) {
+    response.status(404).json({
+      error: "Approval not found."
+    });
+    return;
+  }
+
+  response.json(approval);
+});
+
+app.post("/api/gateway/probe", async (request, response) => {
+  const gatewayUrl =
+    typeof request.body?.gatewayUrl === "string" ? request.body.gatewayUrl : "";
+  const validationError = validateGatewayUrl(gatewayUrl);
+
+  if (validationError) {
+    response.status(400).json({
+      error: validationError
+    });
+    return;
+  }
+
+  try {
+    const result = await probeGatewayConnection({
+      gatewayUrl,
+      gatewayToken:
+        typeof request.body?.gatewayToken === "string"
+          ? request.body.gatewayToken
+          : undefined,
+      gatewayDisableDevicePairing: Boolean(
+        request.body?.gatewayDisableDevicePairing
+      ),
+      gatewayAllowInsecureTls: Boolean(request.body?.gatewayAllowInsecureTls)
+    });
+
+    response.json(result);
+  } catch (error) {
+    response.status(500).json({
+      error: error instanceof Error ? error.message : "Failed to probe gateway."
+    });
+  }
 });
 
 app.get("/api/skills/openclaw", async (_request, response) => {

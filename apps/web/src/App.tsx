@@ -2,12 +2,16 @@ import { startTransition, useEffect, useState } from "react";
 import { io } from "socket.io-client";
 
 import { AgentRoster } from "./components/AgentRoster";
+import { ApprovalsPanel } from "./components/ApprovalsPanel";
 import { EventFeed } from "./components/EventFeed";
+import { GatewayOpsPanel } from "./components/GatewayOpsPanel";
 import { MetricStrip } from "./components/MetricStrip";
 import { MissionControlPanel } from "./components/MissionControlPanel";
 import { OpenClawUsagePanel } from "./components/OpenClawUsagePanel";
+import { OperationsSidebar } from "./components/OperationsSidebar";
 import { SkillMarketplacePanel } from "./components/SkillMarketplacePanel";
 import { OfficeScene } from "./components/OfficeScene";
+import { TaskBoardPanel } from "./components/TaskBoardPanel";
 import { WorkflowPanel } from "./components/WorkflowPanel";
 import type { GatewayEvent, SystemSnapshot } from "./types/contracts";
 
@@ -15,6 +19,7 @@ const emptySnapshot: SystemSnapshot = {
   generatedAt: new Date(0).toISOString(),
   agents: [],
   workflows: [],
+  approvals: [],
   messages: [],
   handoffs: [],
   metrics: {
@@ -23,6 +28,7 @@ const emptySnapshot: SystemSnapshot = {
     runningWorkflows: 0,
     tasksCompleted: 0,
     pendingTasks: 0,
+    pendingApprovals: 0,
     averageHandoffMs: 0,
     averageCycleMs: 0,
     estimatedInputTokens: 0,
@@ -56,7 +62,7 @@ const emptySnapshot: SystemSnapshot = {
 };
 
 const starterPrompt =
-  "Build a full OpenClaw-style multi-agent system with an office dashboard, live task handoffs, and final delivery output.";
+  "Build a full OpenClaw-style multi-agent system with a dark pixel office, playful idle animations, approvals, token tracking, and a final delivery output.";
 
 export default function App() {
   const [snapshot, setSnapshot] = useState<SystemSnapshot>(emptySnapshot);
@@ -123,7 +129,7 @@ export default function App() {
 
     socket.on("event", (event: GatewayEvent) => {
       startTransition(() => {
-        setEvents((current) => [event, ...current].slice(0, 30));
+        setEvents((current) => [event, ...current].slice(0, 40));
       });
     });
 
@@ -183,90 +189,161 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#fff5de_0%,#f7ecd8_34%,#e0cfb3_100%)] px-4 py-6 text-ink sm:px-6 lg:px-8">
-      <div className="mx-auto flex max-w-[1500px] flex-col gap-6">
-        <header className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-          <div className="max-w-3xl">
-            <p className="pixel-label">ClawControl</p>
-            <h1 className="mt-3 text-4xl font-bold tracking-tight text-ink sm:text-5xl">
-              OpenClaw mission control with a chaotic little crustacean office
-            </h1>
-            <p className="mt-4 text-base leading-relaxed text-ink/75">
-              Submit work, watch the desks collaborate in real time, inspect
-              token and skill data, and see the final delivery appear without
-              leaving the dashboard.
-            </p>
-          </div>
-
-          <div className="rounded-none border-2 border-ink bg-paper/90 px-4 py-3 shadow-pixel">
-            <p className="text-[10px] uppercase tracking-[0.24em] text-ink/55">
-              Office pulse
-            </p>
-            <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-ink/70">
-              <span
-                className={`rounded-none border-2 border-ink px-2 py-1 text-[10px] uppercase tracking-[0.18em] ${
-                  connected ? "bg-mint/30 text-ink" : "bg-coral/20 text-coral"
-                }`}
-              >
-                {connected ? "Gateway live" : "Gateway offline"}
-              </span>
-              <span>{snapshot.metrics.runningWorkflows} running</span>
-              <span>{snapshot.metrics.completedWorkflows} shipped</span>
-            </div>
-          </div>
-        </header>
-
-        <MissionControlPanel
+    <div className="min-h-screen bg-[#09070d] px-3 py-4 text-ink sm:px-4 lg:px-5">
+      <div className="mx-auto grid max-w-[1700px] gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+        <OperationsSidebar
+          approvals={snapshot.approvals}
           connected={connected}
-          error={error}
-          messages={snapshot.messages}
-          prompt={prompt}
-          selectedWorkflowId={selectedWorkflowId}
-          submitting={submitting}
+          metrics={snapshot.metrics}
+          openclaw={snapshot.openclaw}
           workflows={snapshot.workflows}
-          onPromptChange={setPrompt}
-          onRestoreStarter={() => setPrompt(starterPrompt)}
-          onSelectWorkflow={setSelectedWorkflowId}
-          onSubmit={() => {
-            void submitWorkflow(prompt);
-          }}
         />
 
-        <MetricStrip metrics={snapshot.metrics} />
+        <main className="space-y-6">
+          <header className="panel overflow-hidden">
+            <div className="grid gap-5 px-5 py-5 xl:grid-cols-[1.1fr_0.9fr]">
+              <div>
+                <p className="pixel-label">ClawControl</p>
+                <h1 className="mt-3 text-4xl font-bold tracking-tight text-ink sm:text-5xl">
+                  Dark pixel mission control for the OpenClaw office
+                </h1>
+                <p className="mt-4 max-w-4xl text-base leading-relaxed text-ink/72">
+                  Dispatch a task, watch the crustacean crew roam between desks,
+                  cards, mahjong, and nap stations, then inspect approvals, gateway
+                  health, token usage, and skill installs without leaving the room.
+                </p>
+              </div>
 
-        <OfficeScene
-          agents={snapshot.agents}
-          workflows={snapshot.workflows}
-          handoffs={snapshot.handoffs}
-          messages={snapshot.messages}
-        />
+              <div className="grid gap-3 sm:grid-cols-3">
+                <HeaderCard
+                  label="Gateway"
+                  value={connected ? "online" : "offline"}
+                  note={`${snapshot.metrics.runningWorkflows} workflows moving`}
+                />
+                <HeaderCard
+                  label="Approvals"
+                  value={String(snapshot.metrics.pendingApprovals)}
+                  note="Release packages waiting"
+                />
+                <HeaderCard
+                  label="OpenClaw"
+                  value={snapshot.openclaw.available ? "live" : "cold"}
+                  note={
+                    snapshot.openclaw.gateway.reachable
+                      ? "Gateway reachable"
+                      : "Probe recommended"
+                  }
+                />
+              </div>
+            </div>
+          </header>
 
-        <div className="grid gap-6 xl:grid-cols-[1.25fr_0.95fr]">
-          <div className="space-y-6">
-            <WorkflowPanel
-              workflows={snapshot.workflows}
-              agents={snapshot.agents}
+          <div id="mission-input">
+            <MissionControlPanel
+              connected={connected}
+              error={error}
+              messages={snapshot.messages}
+              prompt={prompt}
               selectedWorkflowId={selectedWorkflowId}
+              submitting={submitting}
+              workflows={snapshot.workflows}
+              onPromptChange={setPrompt}
+              onRestoreStarter={() => setPrompt(starterPrompt)}
               onSelectWorkflow={setSelectedWorkflowId}
+              onSubmit={() => {
+                void submitWorkflow(prompt);
+              }}
             />
-            <EventFeed
+          </div>
+
+          <MetricStrip metrics={snapshot.metrics} />
+
+          <div id="office-floor">
+            <OfficeScene
               agents={snapshot.agents}
-              events={events}
+              workflows={snapshot.workflows}
+              handoffs={snapshot.handoffs}
               messages={snapshot.messages}
             />
           </div>
 
-          <div className="space-y-6">
-            <AgentRoster
-              agents={snapshot.agents}
-              workflows={snapshot.workflows}
-              handoffs={snapshot.handoffs}
-            />
-            <OpenClawUsagePanel openclaw={snapshot.openclaw} />
-            <SkillMarketplacePanel />
+          <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+            <div id="task-board">
+              <TaskBoardPanel
+                approvals={snapshot.approvals}
+                agents={snapshot.agents}
+                selectedWorkflowId={selectedWorkflowId}
+                workflows={snapshot.workflows}
+                onSelectWorkflow={setSelectedWorkflowId}
+              />
+            </div>
+            <div id="approvals">
+              <ApprovalsPanel
+                approvals={snapshot.approvals}
+                workflows={snapshot.workflows}
+              />
+            </div>
           </div>
-        </div>
+
+          <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
+            <div id="workflow-trace">
+              <WorkflowPanel
+                workflows={snapshot.workflows}
+                agents={snapshot.agents}
+                selectedWorkflowId={selectedWorkflowId}
+                onSelectWorkflow={setSelectedWorkflowId}
+              />
+            </div>
+            <div id="activity-feed">
+              <EventFeed
+                agents={snapshot.agents}
+                events={events}
+                messages={snapshot.messages}
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+            <div id="gateway-ops">
+              <GatewayOpsPanel openclaw={snapshot.openclaw} />
+            </div>
+            <div id="agents">
+              <AgentRoster
+                agents={snapshot.agents}
+                workflows={snapshot.workflows}
+                handoffs={snapshot.handoffs}
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+            <div id="openclaw-usage">
+              <OpenClawUsagePanel openclaw={snapshot.openclaw} />
+            </div>
+            <div id="skills">
+              <SkillMarketplacePanel />
+            </div>
+          </div>
+        </main>
       </div>
     </div>
+  );
+}
+
+function HeaderCard({
+  label,
+  value,
+  note
+}: {
+  label: string;
+  value: string;
+  note: string;
+}) {
+  return (
+    <article className="rounded-none border-2 border-ink/15 bg-[#15101d] px-4 py-4 shadow-pixel">
+      <p className="text-[10px] uppercase tracking-[0.24em] text-ink/48">{label}</p>
+      <p className="mt-2 text-2xl font-bold text-ink">{value}</p>
+      <p className="mt-3 text-sm text-ink/62">{note}</p>
+    </article>
   );
 }

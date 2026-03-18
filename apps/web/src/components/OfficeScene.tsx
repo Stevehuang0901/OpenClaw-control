@@ -38,14 +38,14 @@ export function OfficeScene({
         <div>
           <p className="pixel-label">Office Flow</p>
           <h2 className="mt-2 text-2xl font-bold text-ink">
-            Animated multi-agent floor
+            Animated night-shift office
           </h2>
         </div>
         <div className="flex flex-wrap items-center gap-2 text-xs text-ink">
-          <div className="rounded-none border-2 border-ink bg-paper px-3 py-2 shadow-pixel">
+          <div className="rounded-none border-2 border-ink/15 bg-[#15101d] px-3 py-2 shadow-pixel">
             {handoffs.length} packets in transit
           </div>
-          <div className="rounded-none border-2 border-ink bg-white/70 px-3 py-2 shadow-pixel">
+          <div className="rounded-none border-2 border-ink/15 bg-[#100d17] px-3 py-2 shadow-pixel">
             {activeRequests} live requests
           </div>
         </div>

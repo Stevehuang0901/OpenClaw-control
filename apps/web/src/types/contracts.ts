@@ -1,5 +1,9 @@
 export type {
   AgentRecord,
+  ApprovalRecord,
+  ApprovalStatus,
+  GatewayProbeInput,
+  GatewayProbeResult,
   GatewayEvent,
   HandoffRecord,
   MessageRecord,

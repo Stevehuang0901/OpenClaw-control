@@ -4,6 +4,8 @@ import {
   roleMeta,
   type AgentRecord,
   type AgentRole,
+  type ApprovalRecord,
+  type ApprovalStatus,
   type GatewayEvent,
   type GatewayEventType,
   type HandoffRecord,
@@ -86,6 +88,7 @@ export class Gateway {
 
   private messages: MessageRecord[] = [];
   private handoffs: HandoffRecord[] = [];
+  private approvals: ApprovalRecord[] = [];
   private completedHandoffDurations: number[] = [];
   private openclawStatus: OpenClawStatusSnapshot = emptyOpenClawStatus();
 
@@ -122,11 +125,27 @@ export class Gateway {
     const agents = Array.from(this.agents.values()).sort((left, right) =>
       left.name.localeCompare(right.name)
     );
+    const approvals = [...this.approvals].sort((left, right) => {
+      if (left.status === right.status) {
+        return right.createdAt.localeCompare(left.createdAt);
+      }
+
+      if (left.status === "pending") {
+        return -1;
+      }
+
+      if (right.status === "pending") {
+        return 1;
+      }
+
+      return right.createdAt.localeCompare(left.createdAt);
+    });
 
     return {
       generatedAt: timestamp(),
       agents: structuredClone(agents),
       workflows: structuredClone(workflows),
+      approvals: structuredClone(approvals),
       messages: structuredClone(this.messages.slice(0, 48)),
       handoffs: structuredClone(this.handoffs),
       metrics: this.computeMetrics(workflows),
@@ -137,6 +156,49 @@ export class Gateway {
   setOpenClawStatus(status: OpenClawStatusSnapshot) {
     this.openclawStatus = structuredClone(status);
     this.emit("openclaw_status_updated", status);
+  }
+
+  updateApproval(input: {
+    approvalId: string;
+    status: ApprovalStatus;
+    reviewer?: string | null;
+    decisionNote?: string | null;
+  }) {
+    const approval = this.approvals.find((entry) => entry.id === input.approvalId);
+
+    if (!approval) {
+      return null;
+    }
+
+    const decidedAt = timestamp();
+    approval.status = input.status;
+    approval.decidedAt = decidedAt;
+    approval.reviewer = input.reviewer?.trim() || "Mission Control";
+    approval.decisionNote = input.decisionNote?.trim() || null;
+
+    const workflow = this.workflows.get(approval.workflowId);
+    if (workflow) {
+      workflow.updatedAt = decidedAt;
+    }
+
+    const message: MessageRecord = {
+      id: createId("msg"),
+      workflowId: approval.workflowId,
+      taskId: approval.taskId,
+      fromAgentId: "gateway",
+      toAgentId: "gateway",
+      kind: "info",
+      payload: `${approval.title} ${input.status} by ${approval.reviewer}.`,
+      reasoning: approval.decisionNote,
+      timestamp: decidedAt
+    };
+
+    this.messages = [message, ...this.messages].slice(0, 48);
+
+    this.emit("message_logged", message);
+    this.emit("approval_updated", approval);
+
+    return structuredClone(approval);
   }
 
   submitWorkflow(prompt: string): WorkflowRecord {
@@ -537,9 +599,12 @@ export class Gateway {
     };
 
     this.messages = [message, ...this.messages].slice(0, 48);
+    const approval = this.buildApprovalRecord(workflow, task, completedAt);
+    this.approvals = [approval, ...this.approvals].slice(0, 64);
 
     this.emit("message_logged", message);
     this.emit("workflow_completed", workflow);
+    this.emit("approval_updated", approval);
     this.dispatchReadyTasks();
   }
 
@@ -617,8 +682,13 @@ export class Gateway {
       completedWorkflows: completedWorkflows.length,
       runningWorkflows: workflows.filter((workflow) => workflow.status === "running")
         .length,
-      tasksCompleted: tasks.filter((task) => task.status === "completed").length,
+      tasksCompleted: tasks.filter((task) =>
+        ["done", "handed_off", "completed"].includes(task.status)
+      ).length,
       pendingTasks: tasks.filter((task) => task.status === "pending").length,
+      pendingApprovals: this.approvals.filter(
+        (approval) => approval.status === "pending"
+      ).length,
       averageHandoffMs: average(this.completedHandoffDurations),
       averageCycleMs: average(cycleDurations),
       estimatedInputTokens: sumUsage(workflows, "inputTokens"),
@@ -722,6 +792,39 @@ export class Gateway {
       }),
       emptyTokenUsage()
     );
+  }
+
+  private buildApprovalRecord(
+    workflow: WorkflowRecord,
+    task: TaskRecord,
+    createdAt: string
+  ): ApprovalRecord {
+    return {
+      id: createId("approval"),
+      workflowId: workflow.id,
+      taskId: task.id,
+      title: `Ship ${workflow.summary}`,
+      summary:
+        task.output?.slice(0, 240) ??
+        `Validator completed ${workflow.summary} and prepared the release package.`,
+      status: "pending",
+      confidence: this.computeApprovalConfidence(workflow, task),
+      createdAt,
+      decidedAt: null,
+      decisionNote: null,
+      reviewer: null
+    };
+  }
+
+  private computeApprovalConfidence(workflow: WorkflowRecord, task: TaskRecord) {
+    const allTasksSettled = workflow.tasks.every((entry) =>
+      ["done", "handed_off", "completed"].includes(entry.status)
+    );
+    const usageBonus = task.usage?.source === "reported" ? 10 : 0;
+    const outputBonus = task.output ? Math.min(8, Math.round(task.output.length / 180)) : 0;
+    const settledBonus = allTasksSettled ? 6 : 0;
+
+    return Math.max(58, Math.min(97, 72 + usageBonus + outputBonus + settledBonus));
   }
 }
 
