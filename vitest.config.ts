@@ -3,6 +3,6 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   test: {
     include: ["apps/**/*.test.{ts,tsx}"],
-    exclude: ["dist/**", "node_modules/**", "openclaw-mission-control-master/**"]
+    exclude: ["dist/**", "node_modules/**"]
   }
 });

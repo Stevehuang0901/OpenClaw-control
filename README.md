@@ -38,6 +38,8 @@ apps/
 packages/
   shared/
     src/index.ts           # shared types and role metadata
+docs/
+  screenshots/            # README project preview images
 ```
 
 ## Quick start
@@ -56,6 +58,15 @@ By default the dashboard starts clean so you can type a real task into Mission C
 
 The UI is fully dark-themed and keeps the retro pixel look throughout the mission input, office scene, workflow board, approvals desk, gateway tools, token panels, and skill marketplace.
 
+## Environment variables
+
+The server reads environment variables from your shell when you run `npm run dev` or `npm start`.
+
+- `PORT`
+  Controls the backend gateway port. Default: `8787`
+- `CLAWCONTROL_BOOTSTRAP_DEMOS`
+  When set to `true`, the server seeds demo workflows on boot. Default: `false`
+
 ## Office map scene
 
 The Office page is designed as a playable-looking office map rather than a single flat animation layer. The center scene is split into distinct rooms so activities happen in believable places instead of floating on top of the UI.
@@ -72,11 +83,11 @@ The lobster agents are rendered inside those rooms so the animation reads more l
 
 ### Office map
 
-![ClawControl office map](./image.png)
+![ClawControl office map](./docs/screenshots/office-map.png)
 
 ### Mission control and output
 
-![ClawControl mission control and output](./image2.png)
+![ClawControl mission control and output](./docs/screenshots/mission-control-output.png)
 
 If the `openclaw` CLI is installed and configured on the host, workflow steps are executed through real OpenClaw agent turns and the dashboard also pulls live usage data every 60 seconds.
 
