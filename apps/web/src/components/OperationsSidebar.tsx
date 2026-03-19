@@ -122,18 +122,18 @@ export function OperationsSidebar({
     : openclaw.gateway.error ?? "Gateway probe needed";
 
   return (
-    <aside className="panel flex lg:sticky lg:top-4 lg:h-[calc(100vh-2rem)] lg:flex-col">
-      <div className="border-b-2 border-ink/12 px-4 py-4">
+    <aside className="panel flex lg:sticky lg:top-3 lg:h-[calc(100vh-1.5rem)] lg:flex-col">
+      <div className="border-b-2 border-ink/12 px-3 py-3">
         <div className="flex items-start justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-3">
+          <div className="flex min-w-0 items-center gap-2.5">
             <BrandMark />
             <div className="min-w-0">
-              <p className="pixel-label">OpenClaw</p>
-              <h2 className="mt-2 truncate text-lg font-bold tracking-[0.04em] text-ink">
-                Bot Dashboard
+              <p className="pixel-label">ClawControl</p>
+              <h2 className="mt-1.5 truncate text-base font-bold tracking-[0.03em] text-ink">
+                Multi-agent control room
               </h2>
-              <p className="mt-2 text-[10px] uppercase tracking-[0.22em] text-ink/42">
-                Pixel office control
+              <p className="mt-1.5 text-[9px] uppercase tracking-[0.2em] text-ink/42">
+                Ops-first UI with 3D situational awareness
               </p>
             </div>
           </div>
@@ -144,7 +144,7 @@ export function OperationsSidebar({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 border-b-2 border-ink/12 px-4 py-4">
+      <div className="grid grid-cols-2 gap-1.5 border-b-2 border-ink/12 px-3 py-3">
         <CompactStat label="Live" value={String(liveWorkflows)} tone="neutral" />
         <CompactStat
           label="Approvals"
@@ -163,11 +163,11 @@ export function OperationsSidebar({
         />
       </div>
 
-      <nav className="flex-1 overflow-auto px-3 py-4">
-        <div className="space-y-5">
+      <nav className="flex-1 overflow-auto px-2.5 py-3">
+        <div className="space-y-4">
           {navigationGroups.map((group) => (
             <div key={group.label}>
-              <div className="flex items-center justify-between px-2">
+              <div className="flex items-center justify-between px-1.5">
                 <p className="text-[10px] uppercase tracking-[0.28em] text-ink/40">
                   {group.label}
                 </p>
@@ -182,19 +182,19 @@ export function OperationsSidebar({
                     <button
                       key={item.id}
                       type="button"
-                      className={`w-full rounded-none border px-3 py-3 text-left transition ${
+                      className={`w-full rounded-none border px-2.5 py-2.5 text-left transition ${
                         active
                           ? "border-teal/55 bg-[#21192c] text-ink shadow-pixel"
                           : "border-ink/12 bg-[#14101c] text-ink/80 hover:border-ink/32 hover:bg-[#181320]"
                       }`}
                       onClick={() => onSelectPage(item.id)}
                     >
-                      <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3">
+                      <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-2.5">
                         <NavItemIcon name={item.icon} active={active} />
                         <div className="min-w-0">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5">
                             <span
-                              className={`inline-flex h-7 min-w-7 items-center justify-center border px-1.5 text-[10px] uppercase tracking-[0.18em] ${
+                              className={`inline-flex h-6 min-w-6 items-center justify-center border px-1.5 text-[9px] uppercase tracking-[0.16em] ${
                                 active
                                   ? "border-teal/38 bg-teal/10 text-teal"
                                   : "border-ink/14 bg-[#0f0c15] text-ink/54"
@@ -202,15 +202,15 @@ export function OperationsSidebar({
                             >
                               {item.code}
                             </span>
-                            <span className="truncate text-xs font-bold uppercase tracking-[0.18em] text-current">
+                            <span className="truncate text-[11px] font-bold uppercase tracking-[0.16em] text-current">
                               {item.label}
                             </span>
                           </div>
-                          <div className="mt-2 flex items-center justify-between gap-2">
-                            <span className="truncate text-[10px] uppercase tracking-[0.18em] text-current opacity-60">
+                          <div className="mt-1.5 flex items-center justify-between gap-2">
+                            <span className="truncate text-[9px] uppercase tracking-[0.16em] text-current opacity-60">
                               {item.meta}
                             </span>
-                            <span className="shrink-0 text-[10px] uppercase tracking-[0.18em] text-current opacity-50">
+                            <span className="shrink-0 text-[9px] uppercase tracking-[0.16em] text-current opacity-50">
                               {resolveBadge(item.id, pendingApprovals, liveWorkflows)}
                             </span>
                           </div>
@@ -225,12 +225,12 @@ export function OperationsSidebar({
         </div>
       </nav>
 
-      <div className="border-t-2 border-ink/12 px-3 py-3">
-        <div className="rounded-none border border-ink/12 bg-[#120e19] px-3 py-3">
+      <div className="border-t-2 border-ink/12 px-2.5 py-3">
+        <div className="rounded-none border border-ink/12 bg-[#120e19] px-2.5 py-3">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="pixel-label">Control Bus</p>
-              <p className="mt-2 text-xs font-bold uppercase tracking-[0.18em] text-ink">
+              <p className="mt-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-ink">
                 {openclaw.available ? "OpenClaw linked" : "OpenClaw cold"}
               </p>
             </div>
@@ -239,10 +239,10 @@ export function OperationsSidebar({
               tone={openclaw.gateway.reachable ? "good" : "warn"}
             />
           </div>
-          <p className="mt-3 text-xs leading-relaxed text-ink/62">
+          <p className="mt-2.5 text-[11px] leading-relaxed text-ink/62">
             {openclawSummary}
           </p>
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-2.5 flex flex-wrap gap-1.5">
             <FooterChip label={`${openclaw.providers.length} providers`} />
             <FooterChip label={`${metrics.runningWorkflows} running`} />
           </div>
@@ -254,11 +254,11 @@ export function OperationsSidebar({
 
 function BrandMark() {
   return (
-    <div className="inline-flex h-11 w-11 items-center justify-center border-2 border-ink bg-[#100d17] shadow-pixel">
+    <div className="inline-flex h-9 w-9 items-center justify-center border-2 border-ink bg-[#100d17] shadow-pixel">
       <svg
         viewBox="0 0 16 16"
         aria-hidden="true"
-        className="h-6 w-6 text-teal"
+        className="h-5 w-5 text-teal"
         style={{ imageRendering: "pixelated", shapeRendering: "crispEdges" }}
       >
         <rect x="5" y="1" width="6" height="1" fill="currentColor" opacity="0.7" />
@@ -283,7 +283,7 @@ function NavItemIcon({
 
   return (
     <span
-      className={`inline-flex h-10 w-10 items-center justify-center border ${
+      className={`inline-flex h-9 w-9 items-center justify-center border ${
         active
           ? "border-teal/42 bg-teal/10"
           : "border-ink/12 bg-[#0f0c15]"
@@ -295,7 +295,7 @@ function NavItemIcon({
 }
 
 function SidebarPixelIcon({ name }: { name: NavIconName }) {
-  const className = "h-4 w-4";
+  const className = "h-3.5 w-3.5";
 
   switch (name) {
     case "office":
@@ -387,9 +387,9 @@ function CompactStat({
         : "border-ink/12 bg-[#100d17] text-ink";
 
   return (
-    <div className={`rounded-none border-2 px-3 py-3 shadow-pixel ${toneClass}`}>
-      <p className="text-[9px] uppercase tracking-[0.24em] text-current">{label}</p>
-      <p className="mt-1.5 text-lg font-bold text-current">{value}</p>
+    <div className={`rounded-none border-2 px-2.5 py-2.5 shadow-pixel ${toneClass}`}>
+      <p className="text-[8px] uppercase tracking-[0.22em] text-current">{label}</p>
+      <p className="mt-1 text-base font-bold text-current">{value}</p>
     </div>
   );
 }
@@ -403,7 +403,7 @@ function StatusPill({
 }) {
   return (
     <span
-      className={`inline-flex items-center justify-center border px-2 py-1 text-[10px] uppercase tracking-[0.18em] ${
+      className={`inline-flex items-center justify-center border px-2 py-1 text-[9px] uppercase tracking-[0.16em] ${
         tone === "good"
           ? "border-mint/35 bg-mint/10 text-mint"
           : "border-coral/35 bg-coral/10 text-coral"
@@ -416,7 +416,7 @@ function StatusPill({
 
 function FooterChip({ label }: { label: string }) {
   return (
-    <span className="inline-flex items-center justify-center border border-ink/12 bg-[#0f0c15] px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-ink/60">
+    <span className="inline-flex items-center justify-center border border-ink/12 bg-[#0f0c15] px-2 py-1 text-[9px] uppercase tracking-[0.16em] text-ink/60">
       {label}
     </span>
   );

@@ -8,6 +8,7 @@ import { GatewayOpsPanel } from "./components/GatewayOpsPanel";
 import { MetricStrip } from "./components/MetricStrip";
 import { MissionControlPanel } from "./components/MissionControlPanel";
 import { OpenClawUsagePanel } from "./components/OpenClawUsagePanel";
+import { OfficeCommandDeck } from "./components/OfficeCommandDeck";
 import { OverviewDeck } from "./components/OverviewDeck";
 import {
   OperationsSidebar,
@@ -75,10 +76,10 @@ const pageMeta: Record<
   { kicker: string; title: string; description: string }
 > = {
   office: {
-    kicker: "Office",
-    title: "Live office floor",
+    kicker: "Mission",
+    title: "Control the run, then inspect the office",
     description:
-      "Main floor for live requests. The lobster crew and output screen are the first things you see."
+      "Start from the mission brief and workflow state first. The office map stays available, but it should support the work instead of overwhelming it."
   },
   dashboard: {
     kicker: "Dashboard",
@@ -161,14 +162,18 @@ export default function App() {
     window.addEventListener("hashchange", syncPageFromHash);
     void loadInitialState();
 
-    const socket =
-      window.location.port === "5173"
-        ? io(`${window.location.protocol}//${window.location.hostname}:8787`, {
-            transports: ["websocket"]
-          })
-        : io({
-            transports: ["websocket"]
-          });
+    const socketTarget =
+      window.location.port === "5173" || window.location.port === "5174" || window.location.port === "5175"
+        ? `${window.location.protocol}//${window.location.hostname}:8791`
+        : undefined;
+
+    const socket = socketTarget
+      ? io(socketTarget, {
+          transports: ["websocket"]
+        })
+      : io({
+          transports: ["websocket"]
+        });
 
     socket.on("connect", () => {
       setConnected(true);
@@ -279,7 +284,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#09070d] px-3 py-4 text-ink sm:px-4 lg:px-5">
-      <div className="mx-auto grid max-w-[1720px] gap-5 lg:grid-cols-[252px_minmax(0,1fr)]">
+      <div className="mx-auto grid max-w-[1720px] gap-4 lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[232px_minmax(0,1fr)]">
         <OperationsSidebar
           activePage={activePage}
           approvals={snapshot.approvals}
@@ -400,26 +405,74 @@ function renderPageContent(input: {
   switch (activePage) {
     case "office":
       return (
-        <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(360px,420px)]">
-          <OfficeScene
+        <div className="space-y-4">
+          <section className="panel overflow-hidden">
+            <div className="grid gap-4 px-4 py-4 xl:grid-cols-[1.25fr_0.75fr] xl:px-5 xl:py-5">
+              <div>
+                <p className="pixel-label">Office / Mission Control</p>
+                <h1 className="mt-3 text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+                  Real-time control room, not just a pretty diorama
+                </h1>
+                <p className="mt-4 max-w-4xl text-sm leading-relaxed text-ink/70 sm:text-base">
+                  The office view now separates awareness from control: 3D shows spatial state,
+                  while the workflow deck below handles queue, blockers, approvals, and crew load.
+                </p>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1 2xl:grid-cols-3">
+                <HeaderCard
+                  label="Workflows"
+                  value={String(snapshot.workflows.length)}
+                  note={`${snapshot.metrics.runningWorkflows} currently moving`}
+                  compact
+                />
+                <HeaderCard
+                  label="Busy desks"
+                  value={String(snapshot.agents.filter((agent) => agent.status !== "idle").length)}
+                  note="agents doing active work"
+                  compact
+                />
+                <HeaderCard
+                  label="Approvals"
+                  value={String(snapshot.metrics.pendingApprovals)}
+                  note="packages waiting for review"
+                  compact
+                />
+              </div>
+            </div>
+          </section>
+
+          <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.66fr)_minmax(332px,392px)]">
+            <OfficeScene
+              agents={snapshot.agents}
+              approvals={snapshot.approvals}
+              selectedWorkflowId={selectedWorkflowId}
+              workflows={snapshot.workflows}
+              handoffs={snapshot.handoffs}
+              messages={snapshot.messages}
+            />
+
+            <MissionControlPanel
+              connected={connected}
+              error={error}
+              prompt={prompt}
+              selectedWorkflowId={selectedWorkflowId}
+              submitting={submitting}
+              workflows={snapshot.workflows}
+              onPromptChange={onPromptChange}
+              onRestoreStarter={onRestoreStarter}
+              onSubmit={onSubmit}
+            />
+          </div>
+
+          <OfficeCommandDeck
             agents={snapshot.agents}
             approvals={snapshot.approvals}
-            selectedWorkflowId={selectedWorkflowId}
-            workflows={snapshot.workflows}
-            handoffs={snapshot.handoffs}
             messages={snapshot.messages}
-          />
-
-          <MissionControlPanel
-            connected={connected}
-            error={error}
-            prompt={prompt}
+            openclaw={snapshot.openclaw}
             selectedWorkflowId={selectedWorkflowId}
-            submitting={submitting}
             workflows={snapshot.workflows}
-            onPromptChange={onPromptChange}
-            onRestoreStarter={onRestoreStarter}
-            onSubmit={onSubmit}
+            onSelectWorkflow={onSelectWorkflow}
           />
         </div>
       );

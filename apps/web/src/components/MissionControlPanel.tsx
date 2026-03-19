@@ -48,8 +48,8 @@ export function MissionControlPanel({
       <div className="panel p-4">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="pixel-label">Input</p>
-            <h2 className="mt-2 text-lg font-bold text-ink">Send a mission</h2>
+            <p className="pixel-label">Mission Control</p>
+            <h2 className="mt-2 text-lg font-bold text-ink">Start or reroute a workflow</h2>
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -77,7 +77,7 @@ export function MissionControlPanel({
             value={prompt}
             onChange={(event) => onPromptChange(event.target.value)}
             className="min-h-[160px] w-full rounded-none border-2 border-ink/16 bg-[#0d0a13] px-4 py-4 text-base leading-relaxed text-ink shadow-pixel outline-none transition focus:border-teal"
-            placeholder="Describe the task you want the crew to execute..."
+            placeholder="Describe the outcome you want, what matters most, and any constraints or approvals the crew should respect..."
           />
 
           <div className="flex flex-wrap items-center gap-3">
@@ -86,14 +86,14 @@ export function MissionControlPanel({
               className="rounded-none border-2 border-ink bg-teal px-5 py-3 text-sm font-bold uppercase tracking-[0.2em] text-[#071111] shadow-pixel transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:bg-slate disabled:text-[#f0e5ca]/65"
               disabled={submitting || !prompt.trim()}
             >
-              {submitting ? "Routing..." : "Start mission"}
+              {submitting ? "Routing..." : "Launch workflow"}
             </button>
             <button
               type="button"
               className="rounded-none border-2 border-ink bg-[#1b1526] px-5 py-3 text-sm font-bold uppercase tracking-[0.2em] text-ink shadow-pixel transition hover:-translate-y-0.5"
               onClick={onRestoreStarter}
             >
-              Use sample brief
+              Load sample brief
             </button>
           </div>
         </form>
@@ -122,9 +122,9 @@ export function MissionControlPanel({
         <div className="panel p-4">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="pixel-label">Output</p>
+              <p className="pixel-label">Delivery</p>
               <p className="mt-2 text-sm text-ink/72">
-                {selectedWorkflow?.finalOutput ? "Final package" : "Live output"}
+                {selectedWorkflow?.finalOutput ? "Final package" : "Live draft output"}
               </p>
             </div>
             <span className="rounded-none border-2 border-ink/20 bg-[#14101c] px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-ink/72">
