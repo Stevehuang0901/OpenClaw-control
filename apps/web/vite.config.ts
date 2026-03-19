@@ -12,19 +12,33 @@ export default defineConfig({
   server: {
     host: "0.0.0.0",
     port: 5173,
+    strictPort: false,
     fs: {
       allow: [projectRoot]
     },
     proxy: {
-      "/api": "http://localhost:8787",
+      "/api": "http://localhost:8791",
       "/socket.io": {
-        target: "http://localhost:8787",
+        target: "http://localhost:8791",
         ws: true
       }
     }
   },
   build: {
     outDir: path.resolve(webRoot, "../../dist/web"),
-    emptyOutDir: true
+    emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules/three") || id.includes("node_modules/@react-three")) {
+            return "three-runtime";
+          }
+
+          if (id.includes("apps/web/src/components/OfficeWorld3D")) {
+            return "office-world";
+          }
+        }
+      }
+    }
   }
 });
