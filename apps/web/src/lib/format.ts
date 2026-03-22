@@ -25,6 +25,17 @@ export const formatDuration = (ms: number) => {
 export const truncate = (value: string, max = 120) =>
   value.length > max ? `${value.slice(0, max - 3)}...` : value;
 
+export const toPlainText = (value: string) =>
+  value
+    .replace(/!\[[^\]]*]\([^)]*\)/g, " ")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/^>\s?/gm, "")
+    .replace(/^\s*[-*+]\s+/gm, "")
+    .replace(/[`*_~]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
 export const formatNumber = (value: number) =>
   new Intl.NumberFormat("en-US").format(value);
 

@@ -8,7 +8,6 @@ import { GatewayOpsPanel } from "./components/GatewayOpsPanel";
 import { MetricStrip } from "./components/MetricStrip";
 import { MissionControlPanel } from "./components/MissionControlPanel";
 import { OpenClawUsagePanel } from "./components/OpenClawUsagePanel";
-import { OfficeCommandDeck } from "./components/OfficeCommandDeck";
 import { OverviewDeck } from "./components/OverviewDeck";
 import {
   OperationsSidebar,
@@ -18,6 +17,8 @@ import { SkillMarketplacePanel } from "./components/SkillMarketplacePanel";
 import { OfficeScene } from "./components/OfficeScene";
 import { TaskBoardPanel } from "./components/TaskBoardPanel";
 import { WorkflowPanel } from "./components/WorkflowPanel";
+import { formatNumber, truncate } from "./lib/format";
+import { getWorkflowProgress } from "./lib/workflows";
 import type { GatewayEvent, SystemSnapshot } from "./types/contracts";
 
 const defaultPage: DashboardPage = "office";
@@ -76,10 +77,10 @@ const pageMeta: Record<
   { kicker: string; title: string; description: string }
 > = {
   office: {
-    kicker: "Mission",
-    title: "Control the run, then inspect the office",
+    kicker: "Command Center",
+    title: "Run the workflow like a real control room",
     description:
-      "Start from the mission brief and workflow state first. The office map stays available, but it should support the work instead of overwhelming it."
+      "Route the brief, watch who is active, and keep approvals plus delivery output in one working surface. The office map should explain the system, not drown it."
   },
   dashboard: {
     kicker: "Dashboard",
@@ -162,10 +163,10 @@ export default function App() {
     window.addEventListener("hashchange", syncPageFromHash);
     void loadInitialState();
 
-    const socketTarget =
-      window.location.port === "5173" || window.location.port === "5174" || window.location.port === "5175"
-        ? `${window.location.protocol}//${window.location.hostname}:8791`
-        : undefined;
+    const socketTarget = import.meta.env.DEV
+      ? import.meta.env.VITE_API_ORIGIN ??
+        `${window.location.protocol}//${window.location.hostname}:8811`
+      : undefined;
 
     const socket = socketTarget
       ? io(socketTarget, {
@@ -221,6 +222,107 @@ export default function App() {
       setSelectedWorkflowId(snapshot.workflows[0].id);
     }
   }, [selectedWorkflowId, snapshot.workflows]);
+
+  const focusWorkflow = getFocusWorkflow(snapshot.workflows, selectedWorkflowId);
+  const focusProgress = focusWorkflow ? getWorkflowProgress(focusWorkflow) : null;
+
+  useEffect(() => {
+    const qaWindow = window as Window & {
+      advanceTime?: (ms: number) => Promise<void>;
+      render_game_to_text?: () => string;
+    };
+
+    qaWindow.advanceTime = async (ms: number) => {
+      const duration = Math.max(0, Math.round(ms));
+      if (duration === 0) {
+        return;
+      }
+
+      await new Promise<void>((resolve) => {
+        window.setTimeout(() => resolve(), duration);
+      });
+    };
+
+    qaWindow.render_game_to_text = () =>
+      JSON.stringify({
+        coordinate_system: "screen ui, top-left origin, CSS pixels",
+        page: activePage,
+        connected,
+        prompt_characters: prompt.length,
+        workflow_count: snapshot.workflows.length,
+        pending_approvals: snapshot.metrics.pendingApprovals,
+        running_workflows: snapshot.metrics.runningWorkflows,
+        selected_workflow: focusWorkflow
+          ? {
+              id: focusWorkflow.id,
+              summary: focusWorkflow.summary,
+              status: focusWorkflow.status,
+              progress_percent: focusProgress?.percent ?? 0
+            }
+          : null,
+        office_view:
+          activePage === "office"
+            ? {
+                render_mode:
+                  typeof window === "undefined"
+                    ? "plan"
+                    : window.localStorage.getItem("clawcontrol.office-render-mode-v3") ??
+                      "plan",
+                visible_sections: [
+                  "page_header",
+                  "office_scene",
+                  "dispatch_panel",
+                  "delivery_preview"
+                ]
+              }
+            : null
+      });
+
+    return () => {
+      delete qaWindow.advanceTime;
+      delete qaWindow.render_game_to_text;
+    };
+  }, [
+    activePage,
+    connected,
+    focusProgress?.percent,
+    focusWorkflow,
+    prompt.length,
+    snapshot.metrics.pendingApprovals,
+    snapshot.metrics.runningWorkflows,
+    snapshot.workflows.length
+  ]);
+
+  useEffect(() => {
+    const isEditableTarget = (target: EventTarget | null) =>
+      target instanceof HTMLElement &&
+      (target.closest("input, textarea, select, [contenteditable='true']") !== null ||
+        target.isContentEditable);
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (
+        event.key.toLowerCase() !== "f" ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.altKey ||
+        isEditableTarget(event.target)
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+
+      if (document.fullscreenElement) {
+        void document.exitFullscreen();
+        return;
+      }
+
+      void document.documentElement.requestFullscreen?.();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const submitWorkflow = async (nextPrompt: string) => {
     setSubmitting(true);
@@ -283,24 +385,72 @@ export default function App() {
   });
 
   return (
-    <div className="min-h-screen bg-[#09070d] px-3 py-4 text-ink sm:px-4 lg:px-5">
-      <div className="mx-auto grid max-w-[1720px] gap-4 lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[232px_minmax(0,1fr)]">
-        <OperationsSidebar
-          activePage={activePage}
-          approvals={snapshot.approvals}
-          connected={connected}
-          metrics={snapshot.metrics}
-          openclaw={snapshot.openclaw}
-          workflows={snapshot.workflows}
-          onSelectPage={navigateToPage}
-        />
+    <div className="min-h-screen px-3 py-3 text-ink sm:px-4 lg:px-5">
+      <div className="mx-auto grid max-w-[1680px] gap-4 lg:grid-cols-[246px_minmax(0,1fr)]">
+        <div className="order-2 lg:order-1">
+          <OperationsSidebar
+            activePage={activePage}
+            approvals={snapshot.approvals}
+            connected={connected}
+            metrics={snapshot.metrics}
+            openclaw={snapshot.openclaw}
+            workflows={snapshot.workflows}
+            onSelectPage={navigateToPage}
+          />
+        </div>
 
-        <main className={isOfficePage ? "space-y-3" : "space-y-6"}>
-          {isOfficePage ? null : (
-            <header className="panel overflow-hidden">
-              <div className="grid gap-5 px-5 py-5 xl:grid-cols-[1.1fr_0.9fr]">
-                <div>
-                  <p className="pixel-label">{hero.kicker}</p>
+        <main className={`${isOfficePage ? "space-y-4" : "space-y-6"} order-1 min-w-0 lg:order-2`}>
+          <header className="panel overflow-hidden">
+            {isOfficePage ? (
+              <div className="flex flex-wrap items-start justify-between gap-4 px-5 py-4">
+                <div className="min-w-0 max-w-3xl">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="pixel-label">{hero.kicker}</p>
+                    <HeaderPill
+                      label={connected ? "Gateway" : "Gateway"}
+                      value={connected ? "Linked" : "Offline"}
+                      tone={connected ? "good" : "warn"}
+                    />
+                    <HeaderPill
+                      label="Focus"
+                      value={focusProgress ? `${focusProgress.percent}%` : "Idle"}
+                      tone={focusProgress?.activeTask ? "good" : "neutral"}
+                    />
+                  </div>
+                  <h1 className="mt-3 text-[1.45rem] font-bold leading-tight text-ink sm:text-[1.7rem]">
+                    Live office control
+                  </h1>
+                  <p className="mt-2 max-w-2xl text-sm leading-relaxed text-ink/66">
+                    {focusWorkflow
+                      ? truncate(focusWorkflow.summary, 116)
+                      : "Dispatch from the right rail and use the floor scene as live telemetry."}
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <HeaderPill
+                    label="Queued"
+                    value={String(snapshot.workflows.length)}
+                    tone="neutral"
+                  />
+                  <HeaderPill
+                    label="Approvals"
+                    value={String(snapshot.metrics.pendingApprovals)}
+                    tone={snapshot.metrics.pendingApprovals > 0 ? "warn" : "neutral"}
+                  />
+                  <HeaderPill
+                    label="Tokens"
+                    value={formatNumber(snapshot.metrics.estimatedTotalTokens)}
+                    tone="neutral"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="grid gap-4 px-5 py-5 xl:grid-cols-[1.08fr_0.92fr]">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="pixel-label">{hero.kicker}</p>
+                  </div>
                   <h1 className="mt-3 text-4xl font-bold tracking-tight text-ink sm:text-5xl">
                     {hero.title}
                   </h1>
@@ -314,11 +464,13 @@ export default function App() {
                     label="Gateway"
                     value={connected ? "online" : "offline"}
                     note={`${snapshot.metrics.runningWorkflows} workflows moving`}
+                    accent={connected ? "good" : "warn"}
                   />
                   <HeaderCard
                     label="Approvals"
                     value={String(snapshot.metrics.pendingApprovals)}
                     note="Release packages waiting"
+                    accent={snapshot.metrics.pendingApprovals > 0 ? "warn" : "neutral"}
                   />
                   <HeaderCard
                     label="OpenClaw"
@@ -328,11 +480,12 @@ export default function App() {
                         ? "Gateway reachable"
                         : "Probe recommended"
                     }
+                    accent={snapshot.openclaw.gateway.reachable ? "good" : "warn"}
                   />
                 </div>
               </div>
-            </header>
-          )}
+            )}
+          </header>
 
           {content}
         </main>
@@ -345,30 +498,50 @@ function HeaderCard({
   label,
   value,
   note,
-  compact = false
+  compact = false,
+  accent = "neutral"
 }: {
   label: string;
   value: string;
   note: string;
   compact?: boolean;
+  accent?: "good" | "warn" | "neutral";
 }) {
+  const accentClass =
+    accent === "good"
+      ? "bg-mint/90"
+      : accent === "warn"
+        ? "bg-brass/90"
+        : "bg-white/35";
+
   return (
     <article
-      className={`rounded-none border-2 border-ink/12 bg-[#15101d] shadow-pixel ${
-        compact ? "px-3 py-3" : "px-4 py-4"
+      className={`overflow-hidden rounded-[24px] border border-white/10 bg-white/5 ${
+        compact ? "px-3.5 py-3" : "px-4 py-4"
       }`}
     >
+      <span className={`block h-1 w-12 rounded-full ${accentClass}`} />
       <p
-        className={`uppercase tracking-[0.24em] text-ink/48 ${
+        className={`uppercase tracking-[0.24em] text-ink/46 ${
           compact ? "text-[9px]" : "text-[10px]"
         }`}
       >
         {label}
       </p>
-      <p className={`mt-2 font-bold text-ink ${compact ? "text-xl" : "text-2xl"}`}>
+      <p
+        className={`font-bold leading-none text-ink ${
+          compact ? "mt-2 text-[1.65rem]" : "mt-3 text-[2.35rem]"
+        }`}
+      >
         {value}
       </p>
-      <p className={`mt-3 text-ink/60 ${compact ? "text-xs" : "text-sm"}`}>{note}</p>
+      <p
+        className={`leading-relaxed text-ink/60 ${
+          compact ? "mt-2 text-[11px]" : "mt-3 text-sm"
+        }`}
+      >
+        {note}
+      </p>
     </article>
   );
 }
@@ -405,74 +578,27 @@ function renderPageContent(input: {
   switch (activePage) {
     case "office":
       return (
-        <div className="space-y-4">
-          <section className="panel overflow-hidden">
-            <div className="grid gap-4 px-4 py-4 xl:grid-cols-[1.25fr_0.75fr] xl:px-5 xl:py-5">
-              <div>
-                <p className="pixel-label">Office / Mission Control</p>
-                <h1 className="mt-3 text-3xl font-bold tracking-tight text-ink sm:text-4xl">
-                  Real-time control room, not just a pretty diorama
-                </h1>
-                <p className="mt-4 max-w-4xl text-sm leading-relaxed text-ink/70 sm:text-base">
-                  The office view now separates awareness from control: 3D shows spatial state,
-                  while the workflow deck below handles queue, blockers, approvals, and crew load.
-                </p>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1 2xl:grid-cols-3">
-                <HeaderCard
-                  label="Workflows"
-                  value={String(snapshot.workflows.length)}
-                  note={`${snapshot.metrics.runningWorkflows} currently moving`}
-                  compact
-                />
-                <HeaderCard
-                  label="Busy desks"
-                  value={String(snapshot.agents.filter((agent) => agent.status !== "idle").length)}
-                  note="agents doing active work"
-                  compact
-                />
-                <HeaderCard
-                  label="Approvals"
-                  value={String(snapshot.metrics.pendingApprovals)}
-                  note="packages waiting for review"
-                  compact
-                />
-              </div>
-            </div>
-          </section>
-
-          <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.66fr)_minmax(332px,392px)]">
-            <OfficeScene
-              agents={snapshot.agents}
-              approvals={snapshot.approvals}
-              selectedWorkflowId={selectedWorkflowId}
-              workflows={snapshot.workflows}
-              handoffs={snapshot.handoffs}
-              messages={snapshot.messages}
-            />
-
-            <MissionControlPanel
-              connected={connected}
-              error={error}
-              prompt={prompt}
-              selectedWorkflowId={selectedWorkflowId}
-              submitting={submitting}
-              workflows={snapshot.workflows}
-              onPromptChange={onPromptChange}
-              onRestoreStarter={onRestoreStarter}
-              onSubmit={onSubmit}
-            />
-          </div>
-
-          <OfficeCommandDeck
+        <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.52fr)_minmax(340px,0.82fr)]">
+          <OfficeScene
             agents={snapshot.agents}
             approvals={snapshot.approvals}
-            messages={snapshot.messages}
-            openclaw={snapshot.openclaw}
             selectedWorkflowId={selectedWorkflowId}
             workflows={snapshot.workflows}
+            handoffs={snapshot.handoffs}
+            messages={snapshot.messages}
             onSelectWorkflow={onSelectWorkflow}
+          />
+
+          <MissionControlPanel
+            connected={connected}
+            error={error}
+            prompt={prompt}
+            selectedWorkflowId={selectedWorkflowId}
+            submitting={submitting}
+            workflows={snapshot.workflows}
+            onPromptChange={onPromptChange}
+            onRestoreStarter={onRestoreStarter}
+            onSubmit={onSubmit}
           />
         </div>
       );
@@ -564,18 +690,41 @@ function renderPageContent(input: {
 
 function HeaderPill({
   label,
-  value
+  value,
+  tone = "neutral"
 }: {
   label: string;
   value: string;
+  tone?: "good" | "warn" | "neutral";
 }) {
+  const toneClass =
+    tone === "good"
+      ? "border-mint/35 bg-mint/10 text-mint"
+      : tone === "warn"
+        ? "border-brass/35 bg-brass/10 text-brass"
+        : "border-white/10 bg-white/5 text-ink/72";
+
   return (
-    <div className="rounded-none border-2 border-ink/12 bg-[#15101d] px-3 py-2 shadow-pixel">
-      <p className="text-[9px] uppercase tracking-[0.22em] text-ink/46">{label}</p>
-      <p className="mt-1 text-sm font-bold uppercase tracking-[0.08em] text-ink">
+    <div className={`rounded-full border px-3 py-2 ${toneClass}`}>
+      <p className="text-[9px] uppercase tracking-[0.22em] text-current opacity-70">
+        {label}
+      </p>
+      <p className="mt-1 truncate text-sm font-bold uppercase tracking-[0.08em] text-current">
         {value}
       </p>
     </div>
+  );
+}
+
+function getFocusWorkflow(
+  workflows: SystemSnapshot["workflows"],
+  selectedWorkflowId: string | null
+) {
+  return (
+    workflows.find((workflow) => workflow.id === selectedWorkflowId) ??
+    workflows.find((workflow) => workflow.status === "running") ??
+    workflows[0] ??
+    null
   );
 }
 

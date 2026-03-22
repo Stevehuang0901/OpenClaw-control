@@ -51,10 +51,24 @@ npm run dev
 
 This starts:
 
-- Backend gateway on `http://localhost:8787`
+- Backend gateway on `http://localhost:8811`
 - Frontend dashboard on `http://localhost:5173`
 
 By default the dashboard starts clean so you can type a real task into Mission Control right away.
+
+If you want the office dashboard to run entirely from this repo in Docker:
+
+```bash
+docker compose up --build
+```
+
+Then open `http://localhost:8811`.
+
+If `8811` is already in use on your machine, run:
+
+```bash
+CLAWCONTROL_PORT=8812 docker compose up --build
+```
 
 The UI is fully dark-themed and keeps the retro pixel look throughout the mission input, office scene, workflow board, approvals desk, gateway tools, token panels, and skill marketplace.
 
@@ -63,7 +77,7 @@ The UI is fully dark-themed and keeps the retro pixel look throughout the missio
 The server reads environment variables from your shell when you run `npm run dev` or `npm start`.
 
 - `PORT`
-  Controls the backend gateway port. Default: `8787`
+  Controls the backend gateway port. Default: `8811`
 - `CLAWCONTROL_BOOTSTRAP_DEMOS`
   When set to `true`, the server seeds demo workflows on boot. Default: `false`
 

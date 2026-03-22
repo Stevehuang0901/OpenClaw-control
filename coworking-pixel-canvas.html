@@ -1,0 +1,2329 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ClawControl Coworking Canvas</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #080d1a;
+        --panel: rgba(13, 19, 31, 0.94);
+        --panel-border: rgba(179, 198, 221, 0.16);
+        --panel-soft: rgba(16, 24, 38, 0.92);
+        --text: #eef4ff;
+        --muted: rgba(220, 230, 244, 0.66);
+        --accent: #f0c26c;
+        --open: #63d38d;
+        --occupied: #f0a25a;
+        --seated: #f2d24f;
+        --wall: #131d30;
+        --wall-edge: #223350;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background:
+          radial-gradient(circle at top, rgba(61, 103, 156, 0.2), transparent 34%),
+          linear-gradient(180deg, #0a111d, #060a13 60%, #050810);
+        color: var(--text);
+        font-family: "SFMono-Regular", "Menlo", "Consolas", monospace;
+      }
+
+      body {
+        padding: 24px;
+      }
+
+      .app-shell {
+        width: min(100%, 1120px);
+        margin: 0 auto;
+        display: grid;
+        gap: 18px;
+      }
+
+      .hud-bar,
+      .room-strip,
+      .agent-strip,
+      .info-grid {
+        display: grid;
+        gap: 12px;
+      }
+
+      .hud-bar {
+        grid-template-columns: 1fr auto;
+        align-items: start;
+      }
+
+      .hud-copy {
+        display: grid;
+        gap: 6px;
+      }
+
+      .eyebrow {
+        margin: 0;
+        font-size: 11px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 28px;
+        line-height: 1;
+        letter-spacing: 0.04em;
+      }
+
+      .hud-copy p {
+        margin: 0;
+        max-width: 640px;
+        font-size: 13px;
+        line-height: 1.5;
+        color: var(--muted);
+      }
+
+      .metrics {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: end;
+        gap: 10px;
+      }
+
+      .metric-pill,
+      .agent-pill,
+      .room-card,
+      .modal-panel,
+      .stage-shell {
+        border: 1px solid var(--panel-border);
+        background: var(--panel);
+        box-shadow:
+          0 16px 32px rgba(0, 0, 0, 0.26),
+          inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      }
+
+      .metric-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 38px;
+        padding: 0 14px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .metric-pill strong {
+        color: var(--accent);
+      }
+
+      .agent-strip {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+      }
+
+      .agent-pill {
+        border-radius: 18px;
+        padding: 10px 12px;
+        display: grid;
+        gap: 6px;
+      }
+
+      .agent-pill-head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+      }
+
+      .agent-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.04);
+        flex: 0 0 auto;
+      }
+
+      .agent-name {
+        font-size: 13px;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      .agent-state {
+        font-size: 11px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .room-strip {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+      }
+
+      .room-card {
+        border-radius: 18px;
+        padding: 12px 14px;
+        text-align: left;
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
+        transition:
+          transform 120ms ease,
+          border-color 120ms ease,
+          background 120ms ease;
+      }
+
+      .room-card:hover,
+      .room-card.is-active {
+        transform: translateY(-1px);
+        border-color: rgba(240, 194, 108, 0.34);
+        background: rgba(17, 25, 40, 0.96);
+      }
+
+      .room-card-title {
+        display: block;
+        font-size: 11px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .room-card-status {
+        display: block;
+        margin-top: 6px;
+        font-size: 16px;
+        font-weight: 700;
+      }
+
+      .room-card-copy {
+        display: block;
+        margin-top: 8px;
+        font-size: 12px;
+        line-height: 1.5;
+        color: var(--muted);
+      }
+
+      .stage-shell {
+        position: relative;
+        width: 100%;
+        max-width: 880px;
+        margin: 0 auto;
+        border-radius: 24px;
+        padding: 14px;
+        background:
+          radial-gradient(circle at top left, rgba(108, 165, 219, 0.14), transparent 26%),
+          radial-gradient(circle at top right, rgba(240, 194, 108, 0.16), transparent 28%),
+          linear-gradient(180deg, rgba(12, 18, 30, 0.96), rgba(7, 10, 18, 0.98));
+      }
+
+      .stage-frame {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 880 / 560;
+        overflow: hidden;
+        border-radius: 18px;
+        background: #080d1a;
+      }
+
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+      }
+
+      .stage-overlay {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+
+      .room-zone,
+      .room-badge {
+        pointer-events: auto;
+        position: absolute;
+        font: inherit;
+        color: inherit;
+        cursor: pointer;
+      }
+
+      .room-zone {
+        appearance: none;
+        background: transparent;
+        border: 0;
+      }
+
+      .room-zone:focus-visible,
+      .room-badge:focus-visible,
+      .room-card:focus-visible,
+      .modal-close:focus-visible {
+        outline: 2px solid rgba(255, 241, 205, 0.8);
+        outline-offset: 2px;
+      }
+
+      .room-zone::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border: 1px solid transparent;
+        border-radius: 12px;
+        transition:
+          border-color 120ms ease,
+          background 120ms ease;
+      }
+
+      .room-zone:hover::before,
+      .room-zone.is-active::before {
+        border-color: rgba(240, 194, 108, 0.34);
+        background: rgba(240, 194, 108, 0.08);
+      }
+
+      .room-label {
+        position: absolute;
+        display: grid;
+        gap: 3px;
+        pointer-events: none;
+      }
+
+      .room-label strong {
+        font-size: 11px;
+        line-height: 1;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .room-label span {
+        font-size: 10px;
+        line-height: 1;
+        color: var(--muted);
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .room-badge {
+        appearance: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 28px;
+        padding: 0 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(229, 238, 250, 0.14);
+        background: rgba(10, 16, 27, 0.8);
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
+      }
+
+      .room-badge.is-active {
+        border-color: rgba(240, 194, 108, 0.4);
+        background: rgba(18, 25, 38, 0.92);
+      }
+
+      .room-badge-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+      }
+
+      .room-badge-label {
+        font-size: 10px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .room-badge-status {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+      }
+
+      .radio-box {
+        position: absolute;
+        right: 18px;
+        bottom: 18px;
+        width: min(34%, 270px);
+        border-radius: 16px;
+        border: 1px solid rgba(231, 238, 250, 0.14);
+        padding: 11px 12px;
+        background: rgba(7, 12, 20, 0.84);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.24);
+        pointer-events: none;
+      }
+
+      .radio-box strong {
+        display: block;
+        font-size: 10px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+
+      .radio-box span {
+        display: block;
+        margin-top: 6px;
+        font-size: 12px;
+        line-height: 1.45;
+        color: rgba(240, 246, 255, 0.82);
+      }
+
+      .modal-layer[hidden] {
+        display: none;
+      }
+
+      .modal-layer {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        padding: 18px;
+        pointer-events: auto;
+      }
+
+      .modal-backdrop {
+        position: absolute;
+        inset: 0;
+        border: 0;
+        background: rgba(3, 6, 12, 0.68);
+        cursor: pointer;
+      }
+
+      .modal-panel {
+        position: relative;
+        z-index: 1;
+        width: min(100%, 420px);
+        border-radius: 20px;
+        padding: 18px;
+        display: grid;
+        gap: 12px;
+        background: rgba(12, 18, 30, 0.98);
+      }
+
+      .modal-head {
+        display: flex;
+        align-items: start;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .modal-head h2 {
+        margin: 4px 0 0;
+        font-size: 20px;
+        line-height: 1.05;
+      }
+
+      .modal-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 28px;
+        padding: 0 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        font-size: 10px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .modal-status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+      }
+
+      .modal-close {
+        appearance: none;
+        width: 32px;
+        height: 32px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text);
+        font: inherit;
+        cursor: pointer;
+      }
+
+      .modal-copy,
+      .modal-meta {
+        margin: 0;
+        font-size: 13px;
+        line-height: 1.55;
+        color: var(--muted);
+      }
+
+      .modal-occupants,
+      .modal-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .occupant-chip,
+      .link-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 28px;
+        padding: 0 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.03);
+        font-size: 11px;
+      }
+
+      .occupant-chip-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+      }
+
+      .info-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .info-card {
+        border: 1px solid var(--panel-border);
+        border-radius: 18px;
+        padding: 14px;
+        background: var(--panel-soft);
+        display: grid;
+        gap: 10px;
+      }
+
+      .info-card strong {
+        font-size: 11px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+
+      .info-card p {
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: var(--muted);
+      }
+
+      @media (max-width: 980px) {
+        body {
+          padding: 16px;
+        }
+
+        .hud-bar,
+        .info-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .metrics {
+          justify-content: start;
+        }
+
+        .agent-strip,
+        .room-strip {
+          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        }
+
+        .radio-box {
+          width: min(46%, 250px);
+        }
+      }
+
+      @media (max-width: 640px) {
+        .stage-shell {
+          padding: 10px;
+        }
+
+        .radio-box {
+          width: calc(100% - 24px);
+          right: 12px;
+          bottom: 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="hud-bar">
+        <div class="hud-copy">
+          <p class="eyebrow">Office Telemetry</p>
+          <h1>ClawControl Coworking Canvas</h1>
+          <p>
+            A single-canvas pixel office with six agents, deterministic room geometry,
+            DOM room badges, and click-open room modals.
+          </p>
+        </div>
+
+        <div class="metrics">
+          <div class="metric-pill">Canvas <strong>880x560</strong></div>
+          <div class="metric-pill">Agents <strong id="agent-count">6</strong></div>
+          <div class="metric-pill">Handoffs <strong id="handoff-count">0</strong></div>
+        </div>
+      </header>
+
+      <section class="agent-strip" id="agent-strip" aria-label="Agent status bar"></section>
+
+      <section class="room-strip" id="room-strip" aria-label="Room status cards"></section>
+
+      <section class="stage-shell">
+        <div class="stage-frame" id="stage-frame">
+          <canvas id="scene" width="880" height="560" aria-label="Coworking space canvas"></canvas>
+
+          <div class="stage-overlay" id="stage-overlay" aria-hidden="false">
+            <div class="radio-box" id="radio-box">
+              <strong>Floor radio</strong>
+              <span id="radio-copy">Booting the scene...</span>
+            </div>
+          </div>
+
+          <div class="modal-layer" id="modal-layer" hidden>
+            <button
+              type="button"
+              class="modal-backdrop"
+              id="modal-backdrop"
+              aria-label="Close room details"
+            ></button>
+            <article
+              class="modal-panel"
+              id="modal-panel"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="modal-title"
+            >
+              <div class="modal-head">
+                <div>
+                  <p class="eyebrow">Room focus</p>
+                  <h2 id="modal-title">Work floor</h2>
+                </div>
+                <button type="button" class="modal-close" id="modal-close" aria-label="Close">x</button>
+              </div>
+
+              <div class="modal-status">
+                <span class="modal-status-dot" id="modal-status-dot"></span>
+                <span id="modal-status-text">OPEN</span>
+              </div>
+
+              <p class="modal-copy" id="modal-copy"></p>
+              <p class="modal-meta" id="modal-meta"></p>
+
+              <div class="modal-occupants" id="modal-occupants"></div>
+              <div class="modal-links" id="modal-links"></div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="info-grid">
+        <article class="info-card">
+          <strong>Interaction Notes</strong>
+          <p>
+            Click any room badge, room card, or room hotspot to open the live room modal.
+            The canvas keeps strict draw order, and only the six named agents are ever drawn.
+          </p>
+        </article>
+        <article class="info-card">
+          <strong>Verification Hooks</strong>
+          <p>
+            <code>window.render_game_to_text()</code> returns a concise JSON state dump, and
+            <code>window.advanceTime(ms)</code> advances the scene in fixed 60fps steps.
+          </p>
+        </article>
+      </section>
+    </main>
+
+    <script>
+      const STAGE_WIDTH = 880;
+      const STAGE_HEIGHT = 560;
+      const FRAME_MS = 1000 / 60;
+      const WALK_SPEED = 1.2;
+
+      const AGENTS = [
+        { id: "Atlas", shirt: "#e05020", pants: "#202838", hair: "#181010", skin: "#e8b888" },
+        { id: "Ember", shirt: "#e09020", pants: "#202828", hair: "#281408", skin: "#d09060" },
+        { id: "Prism", shirt: "#e0c020", pants: "#282820", hair: "#101010", skin: "#e8c898" },
+        { id: "Quill", shirt: "#20b060", pants: "#182820", hair: "#0e1408", skin: "#e8b888" },
+        { id: "Scout", shirt: "#2080e0", pants: "#182030", hair: "#101828", skin: "#e0c8a0" },
+        { id: "Sentinel", shirt: "#8040e0", pants: "#201828", hair: "#180e28", skin: "#e8b888" }
+      ];
+
+      const BOUNDS = {
+        mahjong: { x1: 25, y1: 65, x2: 248, y2: 238 },
+        pantry: { x1: 268, y1: 20, x2: 452, y2: 238 },
+        quiet: { x1: 472, y1: 62, x2: 668, y2: 238 },
+        lounge: { x1: 22, y1: 256, x2: 358, y2: 458 },
+        work: { x1: 395, y1: 262, x2: 708, y2: 455 }
+      };
+
+      const AVOIDANCE = {
+        mahjong: [{ key: "mahjong_table", x: 93, y: 108, w: 88, h: 88 }],
+        pantry: [],
+        quiet: [{ key: "quiet_desk", x: 516, y: 154, w: 124, h: 46 }],
+        lounge: [{ key: "lounge_sofa", x: 126, y: 386, w: 140, h: 54 }],
+        work: [
+          { key: "work_desk_row1", x: 392, y: 306, w: 166, h: 44 },
+          { key: "work_desk_row2", x: 412, y: 402, w: 248, h: 28 }
+        ]
+      };
+
+      const DOORS = [
+        { from: "mahjong", to: "pantry", passX: 260, passY: 188 },
+        { from: "pantry", to: "quiet", passX: 464, passY: 130 },
+        { from: "mahjong", to: "lounge", passX: 118, passY: 250 },
+        { from: "pantry", to: "work", passX: 338, passY: 250 },
+        { from: "quiet", to: "work", passX: 604, passY: 250 },
+        { from: "lounge", to: "work", passX: 380, passY: 367 }
+      ];
+
+      const ROOM_META = {
+        mahjong: {
+          label: "Mahjong room",
+          badgeX: 34,
+          badgeY: 36,
+          labelX: 38,
+          labelY: 66,
+          description: "A green felt square table with four chairs and a steady tile rhythm.",
+          statusHint: "Tiles stack on the surface as seated players pass turns."
+        },
+        pantry: {
+          label: "Tea pantry",
+          badgeX: 302,
+          badgeY: 20,
+          labelX: 304,
+          labelY: 54,
+          description: "A warm counter line with a kettle, shelves, and the main tea station.",
+          statusHint: "Seated pantry guests stir tea while steam drifts above the kettle."
+        },
+        quiet: {
+          label: "Quiet pod",
+          badgeX: 534,
+          badgeY: 40,
+          labelX: 536,
+          labelY: 70,
+          description: "A single focused workstation with bookshelf cover and low blue light.",
+          statusHint: "Typing alternates hands until the pod slips into a short think pause."
+        },
+        lounge: {
+          label: "Screening lounge",
+          badgeX: 34,
+          badgeY: 266,
+          labelX: 40,
+          labelY: 298,
+          description: "A sofa facing a slow-moving sci-fi screen with a coffee table up front.",
+          statusHint: "Lounge sitters almost always stay settled and face the screen to the left."
+        },
+        work: {
+          label: "Work floor",
+          badgeX: 562,
+          badgeY: 266,
+          labelX: 564,
+          labelY: 298,
+          description: "The two-desk coding floor with monitors, chairs, cups, and side benches.",
+          statusHint: "The work floor keeps both desks drawn at all times, even when agents roam."
+        }
+      };
+
+      const ROOM_SEATS = {
+        mahjong: [
+          { key: "mahjong-north", room: "mahjong", x: 137, y: 98, facing: "down" },
+          { key: "mahjong-south", room: "mahjong", x: 137, y: 196, facing: "up" },
+          { key: "mahjong-west", room: "mahjong", x: 83, y: 152, facing: "right" },
+          { key: "mahjong-east", room: "mahjong", x: 181, y: 152, facing: "left" }
+        ],
+        pantry: [
+          { key: "pantry-counter", room: "pantry", x: 352, y: 174, facing: "up" },
+          { key: "pantry-stool", room: "pantry", x: 320, y: 186, facing: "up" }
+        ],
+        quiet: [
+          { key: "quiet-desk", room: "quiet", x: 575, y: 188, facing: "up" },
+          { key: "quiet-nook", room: "quiet", x: 626, y: 212, facing: "left" }
+        ],
+        lounge: [
+          { key: "lounge-sofa-a", room: "lounge", x: 164, y: 406, facing: "left" },
+          { key: "lounge-sofa-b", room: "lounge", x: 214, y: 410, facing: "left" },
+          { key: "lounge-sofa-c", room: "lounge", x: 252, y: 406, facing: "left" }
+        ],
+        work: [
+          { key: "work-desk-0", room: "work", x: 420, y: 334, facing: "up" },
+          { key: "work-desk-1", room: "work", x: 498, y: 334, facing: "up" },
+          { key: "work-bench-a", room: "work", x: 620, y: 426, facing: "left" },
+          { key: "work-bench-b", room: "work", x: 432, y: 426, facing: "right" }
+        ]
+      };
+
+      const HOME_ASSIGNMENTS = {
+        Atlas: { room: "work", seatKey: "work-desk-0" },
+        Ember: { room: "pantry", seatKey: "pantry-counter" },
+        Prism: { room: "work", seatKey: "work-desk-1" },
+        Quill: { room: "mahjong", seatKey: "mahjong-south" },
+        Scout: { room: "mahjong", seatKey: "mahjong-east" },
+        Sentinel: { room: "quiet", seatKey: "quiet-desk" }
+      };
+
+      const ROOM_ORDER = ["mahjong", "pantry", "quiet", "lounge", "work"];
+      const ROOM_COPY = {
+        mahjong: "The square felt table always keeps four chairs visible, even when only two agents start here.",
+        pantry: "The tea counter is a warm stopover for short visits and steam-heavy seated work.",
+        quiet: "Typing is steady in the pod until the dots appear over someone's head.",
+        lounge: "Lounge guests almost always stay seated and face the screen wall to the left.",
+        work: "Two desk slots anchor the work floor, and the empty chairs stay visible whenever the coders step away."
+      };
+
+      const RADIO_MESSAGES = [
+        "Atlas says the work floor is synced and ready for the next push.",
+        "Ember is keeping the kettle hot while the pantry stays open to visitors.",
+        "Prism called out a clean compile across both work-floor monitors.",
+        "Quill just nudged the mahjong table pace without breaking the draw order.",
+        "Scout marked a quiet route back from the east side of the table.",
+        "Sentinel is holding the pod until the dots fade and typing resumes."
+      ];
+
+      const MAHJONG_TABLE = {
+        x: 97,
+        y: 112,
+        size: 80,
+        centerX: 137,
+        centerY: 152
+      };
+
+      const PANTRY_KETTLE = { x: 306, y: 138 };
+      const LOUNGE_SCREEN = { x: 52, y: 270, w: 136, h: 92 };
+
+      const elements = {
+        canvas: document.getElementById("scene"),
+        stageFrame: document.getElementById("stage-frame"),
+        overlay: document.getElementById("stage-overlay"),
+        agentStrip: document.getElementById("agent-strip"),
+        roomStrip: document.getElementById("room-strip"),
+        handoffCount: document.getElementById("handoff-count"),
+        radioCopy: document.getElementById("radio-copy"),
+        modalLayer: document.getElementById("modal-layer"),
+        modalBackdrop: document.getElementById("modal-backdrop"),
+        modalClose: document.getElementById("modal-close"),
+        modalTitle: document.getElementById("modal-title"),
+        modalStatusDot: document.getElementById("modal-status-dot"),
+        modalStatusText: document.getElementById("modal-status-text"),
+        modalCopy: document.getElementById("modal-copy"),
+        modalMeta: document.getElementById("modal-meta"),
+        modalOccupants: document.getElementById("modal-occupants"),
+        modalLinks: document.getElementById("modal-links")
+      };
+
+      const ctx = elements.canvas.getContext("2d");
+
+      if (!ctx) {
+        throw new Error("Unable to create 2D canvas context.");
+      }
+
+      const state = {
+        tick: 0,
+        activeRoom: "work",
+        modalRoom: null,
+        handoffs: 0,
+        agents: [],
+        pantryParticles: [],
+        mahjong: {
+          timer: 0,
+          actorId: null,
+          actorPhaseStart: -999,
+          tileCommittedAt: -1,
+          tableTiles: []
+        },
+        lounge: {
+          stars: [],
+          craftX: LOUNGE_SCREEN.x + 68,
+          raiseAgentId: null,
+          raiseTimer: 0
+        },
+        ui: {
+          badgeButtons: new Map(),
+          zoneButtons: new Map(),
+          roomLabels: new Map(),
+          roomCards: new Map(),
+          agentPills: new Map()
+        }
+      };
+
+      function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
+
+      function randInt(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+      }
+
+      function choice(items) {
+        return items[Math.floor(Math.random() * items.length)];
+      }
+
+      function distance(ax, ay, bx, by) {
+        return Math.hypot(bx - ax, by - ay);
+      }
+
+      function pointInRect(x, y, rect) {
+        return x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h;
+      }
+
+      function pointInBounds(x, y, bounds) {
+        return x >= bounds.x1 && x <= bounds.x2 && y >= bounds.y1 && y <= bounds.y2;
+      }
+
+      function rectToPercent(styleRect) {
+        return {
+          left: (styleRect.x / STAGE_WIDTH) * 100,
+          top: (styleRect.y / STAGE_HEIGHT) * 100,
+          width: (styleRect.w / STAGE_WIDTH) * 100,
+          height: (styleRect.h / STAGE_HEIGHT) * 100
+        };
+      }
+
+      function pointToPercent(x, y) {
+        return {
+          left: (x / STAGE_WIDTH) * 100,
+          top: (y / STAGE_HEIGHT) * 100
+        };
+      }
+
+      function roomAction(room) {
+        if (room === "mahjong") return "playing_mahjong";
+        if (room === "pantry") return "making_tea";
+        if (room === "quiet") return "typing";
+        if (room === "lounge") return "watching";
+        return "coding";
+      }
+
+      function stateLabel(agent) {
+        if (agent.state === "roaming") return "ROAMING";
+        if (agent.state === "inter_room") return "IN TRANSIT";
+        if (agent.state === "returning") return "HEADING HOME";
+
+        const action = agent.action;
+        if (action === "playing_mahjong") return "PLAYING";
+        if (action === "making_tea") return "MAKING TEA";
+        if (action === "typing") return "TYPING";
+        if (action === "think_pause") return "THINKING";
+        if (action === "watching") return "WATCHING";
+        if (action === "coding") return "CODING";
+        if (action === "stretch") return "STRETCHING";
+        return "SEATED";
+      }
+
+      function toneForStatus(status) {
+        if (status === "OPEN") return "var(--open)";
+        if (status === "OCCUPIED") return "var(--occupied)";
+        return "var(--seated)";
+      }
+
+      function getRoomStatus(room) {
+        const count = state.agents.filter((agent) => agent.room === room).length;
+        if (count <= 0) return "OPEN";
+        if (count === 1) return "OCCUPIED";
+        return count + " SEATED";
+      }
+
+      function getSeatByKey(seatKey) {
+        for (const room of ROOM_ORDER) {
+          const match = ROOM_SEATS[room].find((seat) => seat.key === seatKey);
+          if (match) return match;
+        }
+        return null;
+      }
+
+      function getSeatFacing(agent) {
+        const seat = getSeatByKey(agent.currentSeatKey || agent.homeSeatKey);
+        return seat ? seat.facing : agent.dir < 0 ? "left" : "right";
+      }
+
+      function getDoorBetween(a, b) {
+        return (
+          DOORS.find(
+            (door) => (door.from === a && door.to === b) || (door.from === b && door.to === a)
+          ) || null
+        );
+      }
+
+      function getAdjacentRooms(room) {
+        return DOORS.flatMap((door) => {
+          if (door.from === room) return [door.to];
+          if (door.to === room) return [door.from];
+          return [];
+        });
+      }
+
+      function findRoomPath(from, to) {
+        if (from === to) return [from];
+
+        const queue = [[from]];
+        const visited = new Set([from]);
+
+        while (queue.length > 0) {
+          const path = queue.shift();
+          const current = path[path.length - 1];
+          const nextRooms = getAdjacentRooms(current);
+
+          for (const next of nextRooms) {
+            if (visited.has(next)) continue;
+            const nextPath = path.concat(next);
+            if (next === to) return nextPath;
+            visited.add(next);
+            queue.push(nextPath);
+          }
+        }
+
+        return [from];
+      }
+
+      function buildWaypoints(fromRoom, toRoom, destination) {
+        const path = findRoomPath(fromRoom, toRoom);
+        const waypoints = [];
+
+        for (let index = 0; index < path.length - 1; index += 1) {
+          const current = path[index];
+          const next = path[index + 1];
+          const door = getDoorBetween(current, next);
+          if (!door) continue;
+          waypoints.push({ x: door.passX, y: door.passY, room: next });
+        }
+
+        waypoints.push({ x: destination.x, y: destination.y, room: toRoom });
+        return waypoints;
+      }
+
+      function makeInitialAgents() {
+        return AGENTS.map((base, index) => {
+          const home = HOME_ASSIGNMENTS[base.id];
+          const seat = getSeatByKey(home.seatKey);
+          return {
+            id: base.id,
+            shirt: base.shirt,
+            pants: base.pants,
+            hair: base.hair,
+            skin: base.skin,
+            room: home.room,
+            homeRoom: home.room,
+            homeX: seat.x,
+            homeY: seat.y,
+            x: seat.x,
+            y: seat.y,
+            state: "seated",
+            action: roomAction(home.room),
+            stateTimer: randInt(300, 600),
+            waypoints: [],
+            waypointIndex: 0,
+            walkFrame: index * 4,
+            dir: seat.facing === "left" ? -1 : 1,
+            moving: false,
+            homeSeatKey: home.seatKey,
+            currentSeatKey: home.seatKey,
+            targetX: seat.x,
+            targetY: seat.y,
+            pendingSeatKey: null,
+            pendingRoom: null,
+            roomActionTick: 0,
+            thinkPauseTimer: 0,
+            stretchTimer: 0
+          };
+        });
+      }
+
+      function createLoungeStars() {
+        return Array.from({ length: 26 }, (_, index) => ({
+          x: LOUNGE_SCREEN.x + 6 + (index * 17) % (LOUNGE_SCREEN.w - 12),
+          y: LOUNGE_SCREEN.y + 8 + ((index * 11) % (LOUNGE_SCREEN.h - 16))
+        }));
+      }
+
+      function occupiedSeatKeys(exceptAgentId = null) {
+        return new Set(
+          state.agents
+            .filter(
+              (agent) =>
+                agent.id !== exceptAgentId &&
+                agent.state === "seated" &&
+                agent.currentSeatKey
+            )
+            .map((agent) => agent.currentSeatKey)
+        );
+      }
+
+      function getOpenSeat(room, exceptAgentId = null) {
+        const occupied = occupiedSeatKeys(exceptAgentId);
+        const seats = ROOM_SEATS[room];
+        const openSeats = seats.filter((seat) => !occupied.has(seat.key));
+        if (openSeats.length > 0) return choice(openSeats);
+        return room === "work" ? seats.find((seat) => seat.key.startsWith("work-bench")) || seats[0] : null;
+      }
+
+      function pickRoamPoint(room) {
+        const bounds = BOUNDS[room];
+        const zones = AVOIDANCE[room];
+        for (let attempt = 0; attempt < 40; attempt += 1) {
+          const point = {
+            x: randInt(bounds.x1 + 8, bounds.x2 - 8),
+            y: randInt(bounds.y1 + 8, bounds.y2 - 8)
+          };
+          if (!zones.some((zone) => pointInRect(point.x, point.y, zone))) {
+            return point;
+          }
+        }
+        return {
+          x: clamp((bounds.x1 + bounds.x2) / 2, bounds.x1, bounds.x2),
+          y: clamp((bounds.y1 + bounds.y2) / 2, bounds.y1, bounds.y2)
+        };
+      }
+
+      function beginRoaming(agent) {
+        agent.state = "roaming";
+        agent.action = "";
+        agent.currentSeatKey = null;
+        agent.roomActionTick = 0;
+        agent.moving = true;
+        const roam = pickRoamPoint(agent.room);
+        agent.targetX = roam.x;
+        agent.targetY = roam.y;
+        agent.dir = roam.x < agent.x ? -1 : 1;
+      }
+
+      function beginInterRoom(agent, destinationRoom) {
+        const seat = getOpenSeat(destinationRoom, agent.id);
+        if (!seat) {
+          agent.stateTimer = randInt(300, 600);
+          return false;
+        }
+
+        agent.state = "inter_room";
+        agent.action = "";
+        agent.currentSeatKey = null;
+        agent.pendingRoom = destinationRoom;
+        agent.pendingSeatKey = seat.key;
+        agent.waypoints = buildWaypoints(agent.room, destinationRoom, seat);
+        agent.waypointIndex = 0;
+        agent.targetX = agent.waypoints[0].x;
+        agent.targetY = agent.waypoints[0].y;
+        agent.dir = agent.targetX < agent.x ? -1 : 1;
+        agent.roomActionTick = 0;
+        agent.thinkPauseTimer = 0;
+        agent.stretchTimer = 0;
+        agent.moving = true;
+        return true;
+      }
+
+      function beginReturn(agent) {
+        agent.currentSeatKey = null;
+        agent.pendingRoom = agent.homeRoom;
+        agent.pendingSeatKey = agent.homeSeatKey;
+        agent.roomActionTick = 0;
+        agent.thinkPauseTimer = 0;
+        agent.stretchTimer = 0;
+
+        if (agent.room !== agent.homeRoom) {
+          agent.state = "returning";
+          agent.waypoints = buildWaypoints(agent.room, agent.homeRoom, {
+            x: agent.homeX,
+            y: agent.homeY
+          });
+          agent.waypointIndex = 0;
+          agent.targetX = agent.waypoints[0].x;
+          agent.targetY = agent.waypoints[0].y;
+        } else {
+          agent.state = "returning";
+          agent.waypoints = [{ x: agent.homeX, y: agent.homeY, room: agent.homeRoom }];
+          agent.waypointIndex = 0;
+          agent.targetX = agent.homeX;
+          agent.targetY = agent.homeY;
+        }
+
+        agent.dir = agent.targetX < agent.x ? -1 : 1;
+        agent.moving = true;
+      }
+
+      function updateSeatedAction(agent) {
+        agent.roomActionTick += 1;
+
+        if (agent.room === "quiet") {
+          if (agent.thinkPauseTimer > 0) {
+            agent.thinkPauseTimer -= 1;
+            agent.action = "think_pause";
+            if (agent.thinkPauseTimer === 0) {
+              agent.action = "typing";
+            }
+            return;
+          }
+
+          agent.action = "typing";
+          if (agent.roomActionTick % 240 === 0) {
+            agent.thinkPauseTimer = 50;
+            agent.action = "think_pause";
+          }
+          return;
+        }
+
+        if (agent.room === "work") {
+          if (agent.stretchTimer > 0) {
+            agent.stretchTimer -= 1;
+            agent.action = "stretch";
+            if (agent.stretchTimer === 0) {
+              agent.action = "coding";
+            }
+            return;
+          }
+
+          agent.action = "coding";
+          if (agent.roomActionTick % 180 === 0 && Math.random() < 0.15) {
+            agent.stretchTimer = 50;
+            agent.action = "stretch";
+          }
+          return;
+        }
+
+        agent.action = roomAction(agent.room);
+      }
+
+      function getMovementBounds(agent) {
+        const bounds = BOUNDS[agent.room];
+        if (agent.state !== "inter_room" && agent.state !== "returning") {
+          return bounds;
+        }
+
+        const waypoint = agent.waypoints[agent.waypointIndex];
+        if (!waypoint) return bounds;
+
+        return {
+          x1: Math.min(bounds.x1, waypoint.x - 8),
+          y1: Math.min(bounds.y1, waypoint.y - 8),
+          x2: Math.max(bounds.x2, waypoint.x + 8),
+          y2: Math.max(bounds.y2, waypoint.y + 8)
+        };
+      }
+
+      function moveAgent(agent) {
+        const dx = agent.targetX - agent.x;
+        const dy = agent.targetY - agent.y;
+        const dist = Math.hypot(dx, dy);
+
+        if (dist <= WALK_SPEED) {
+          agent.x = agent.targetX;
+          agent.y = agent.targetY;
+          agent.moving = false;
+          return true;
+        }
+
+        let stepX = (dx / dist) * WALK_SPEED;
+        let stepY = (dy / dist) * WALK_SPEED;
+        const roomBounds = getMovementBounds(agent);
+        const predictedX = agent.x + stepX;
+        const predictedY = agent.y + stepY;
+        const zones = AVOIDANCE[agent.room];
+
+        if (zones.some((zone) => pointInRect(predictedX, predictedY, zone))) {
+          if (Math.abs(dx) > Math.abs(dy)) {
+            stepX = 0;
+          } else {
+            stepY = 0;
+          }
+        }
+
+        agent.x = clamp(agent.x + stepX, roomBounds.x1, roomBounds.x2);
+        agent.y = clamp(agent.y + stepY, roomBounds.y1, roomBounds.y2);
+        agent.dir = dx < 0 ? -1 : 1;
+        agent.moving = true;
+        agent.walkFrame += 1;
+        return distance(agent.x, agent.y, agent.targetX, agent.targetY) <= WALK_SPEED;
+      }
+
+      function finishWaypoint(agent) {
+        const waypoint = agent.waypoints[agent.waypointIndex];
+        if (!waypoint) return;
+
+        if (waypoint.room && waypoint.room !== agent.room) {
+          agent.room = waypoint.room;
+        }
+
+        agent.waypointIndex += 1;
+
+        if (agent.waypointIndex < agent.waypoints.length) {
+          const next = agent.waypoints[agent.waypointIndex];
+          agent.targetX = next.x;
+          agent.targetY = next.y;
+          agent.dir = next.x < agent.x ? -1 : 1;
+          agent.moving = true;
+          return;
+        }
+
+        if (agent.state === "inter_room") {
+          const seat = getSeatByKey(agent.pendingSeatKey);
+          if (seat) {
+            agent.currentSeatKey = seat.key;
+            agent.x = seat.x;
+            agent.y = seat.y;
+            agent.targetX = seat.x;
+            agent.targetY = seat.y;
+            agent.dir = seat.facing === "left" ? -1 : 1;
+          }
+          agent.state = "seated";
+          agent.action = roomAction(agent.room);
+          agent.stateTimer = randInt(200, 400);
+          agent.pendingSeatKey = null;
+          agent.pendingRoom = null;
+          agent.waypoints = [];
+          agent.waypointIndex = 0;
+          agent.roomActionTick = 0;
+          agent.moving = false;
+          state.handoffs += 1;
+          return;
+        }
+
+        if (agent.state === "returning") {
+          agent.room = agent.homeRoom;
+          agent.currentSeatKey = agent.homeSeatKey;
+          agent.x = agent.homeX;
+          agent.y = agent.homeY;
+          agent.targetX = agent.homeX;
+          agent.targetY = agent.homeY;
+          agent.state = "seated";
+          agent.action = roomAction(agent.homeRoom);
+          agent.stateTimer = randInt(300, 600);
+          agent.pendingSeatKey = null;
+          agent.pendingRoom = null;
+          agent.waypoints = [];
+          agent.waypointIndex = 0;
+          agent.roomActionTick = 0;
+          agent.moving = false;
+        }
+      }
+
+      function pickAdjacentRoom(agent) {
+        const candidates = getAdjacentRooms(agent.room);
+        if (candidates.length === 0) return null;
+        return choice(candidates);
+      }
+
+      function updateAgent(agent) {
+        if (agent.state === "seated") {
+          agent.x = agent.targetX = agent.x;
+          agent.y = agent.targetY = agent.y;
+          agent.moving = false;
+          if (agent.room === "lounge") {
+            agent.dir = -1;
+          }
+
+          updateSeatedAction(agent);
+          agent.stateTimer -= 1;
+
+          if (agent.room !== agent.homeRoom) {
+            if (agent.stateTimer <= 0) {
+              beginReturn(agent);
+            }
+            return;
+          }
+
+          if (agent.stateTimer > 0) {
+            return;
+          }
+
+          let stayThreshold = 0.6;
+          let roamThreshold = 0.85;
+          if (agent.room === "lounge") {
+            stayThreshold = 0.9;
+            roamThreshold = 0.98;
+          }
+
+          const roll = Math.random();
+          if (roll < stayThreshold) {
+            agent.stateTimer = randInt(300, 600);
+            return;
+          }
+
+          if (roll < roamThreshold) {
+            beginRoaming(agent);
+            return;
+          }
+
+          const nextRoom = pickAdjacentRoom(agent);
+          if (!nextRoom || !beginInterRoom(agent, nextRoom)) {
+            agent.stateTimer = randInt(300, 600);
+          }
+          return;
+        }
+
+        if (agent.state === "roaming") {
+          const arrived = moveAgent(agent);
+          if (!arrived) return;
+
+          agent.moving = false;
+          if (Math.random() < 0.5) {
+            const nextRoam = pickRoamPoint(agent.room);
+            agent.targetX = nextRoam.x;
+            agent.targetY = nextRoam.y;
+            agent.dir = nextRoam.x < agent.x ? -1 : 1;
+            agent.moving = true;
+            return;
+          }
+
+          beginReturn(agent);
+          return;
+        }
+
+        if (agent.state === "inter_room" || agent.state === "returning") {
+          const arrived = moveAgent(agent);
+          if (arrived) {
+            finishWaypoint(agent);
+          }
+        }
+      }
+
+      function updatePantryParticles() {
+        const counterOccupied = state.agents.some(
+          (agent) =>
+            agent.room === "pantry" &&
+            agent.state === "seated" &&
+            agent.currentSeatKey === "pantry-counter"
+        );
+
+        if (counterOccupied && state.tick % 8 === 0 && state.pantryParticles.length < 20) {
+          state.pantryParticles.push({
+            x: PANTRY_KETTLE.x + 4,
+            y: PANTRY_KETTLE.y + 1,
+            alpha: 0.7,
+            vy: -0.4,
+            vx: Math.random() * 0.4 - 0.2
+          });
+        }
+
+        state.pantryParticles = state.pantryParticles
+          .map((particle) => ({
+            x: particle.x + particle.vx,
+            y: particle.y + particle.vy,
+            alpha: particle.alpha - 0.015,
+            vy: particle.vy,
+            vx: particle.vx
+          }))
+          .filter((particle) => particle.alpha > 0);
+      }
+
+      function updateMahjongEvent() {
+        state.mahjong.timer += 1;
+        const seatedMahjongAgents = state.agents.filter(
+          (agent) => agent.room === "mahjong" && agent.state === "seated"
+        );
+
+        if (state.mahjong.timer % 90 === 0 && seatedMahjongAgents.length > 0) {
+          const actor = choice(seatedMahjongAgents);
+          state.mahjong.actorId = actor.id;
+          state.mahjong.actorPhaseStart = state.tick;
+          state.mahjong.tileCommittedAt = -1;
+        }
+
+        if (state.mahjong.actorId && state.tick - state.mahjong.actorPhaseStart >= 75) {
+          state.mahjong.actorId = null;
+        }
+
+        if (
+          state.mahjong.actorId &&
+          state.tick - state.mahjong.actorPhaseStart >= 50 &&
+          state.mahjong.tileCommittedAt !== state.mahjong.actorPhaseStart
+        ) {
+          state.mahjong.tileCommittedAt = state.mahjong.actorPhaseStart;
+          const tileIndex = state.mahjong.tableTiles.length % 8;
+          if (tileIndex === 0) {
+            state.mahjong.tableTiles = [];
+          }
+          state.mahjong.tableTiles.push({
+            x: MAHJONG_TABLE.x + 18 + (tileIndex % 4) * 12,
+            y: MAHJONG_TABLE.y + 26 + Math.floor(tileIndex / 4) * 14
+          });
+        }
+      }
+
+      function updateLoungeAnimation() {
+        state.lounge.stars.forEach((star) => {
+          star.x += 0.15;
+          if (star.x > LOUNGE_SCREEN.x + LOUNGE_SCREEN.w - 4) {
+            star.x = LOUNGE_SCREEN.x + 4;
+          }
+        });
+
+        state.lounge.craftX += 0.08;
+        if (state.lounge.craftX > LOUNGE_SCREEN.x + LOUNGE_SCREEN.w - 12) {
+          state.lounge.craftX = LOUNGE_SCREEN.x + 8;
+        }
+
+        if (state.lounge.raiseTimer > 0) {
+          state.lounge.raiseTimer -= 1;
+        } else if (state.tick % 350 === 0) {
+          const loungeSitters = state.agents.filter(
+            (agent) => agent.room === "lounge" && agent.state === "seated"
+          );
+          if (loungeSitters.length > 0) {
+            state.lounge.raiseAgentId = choice(loungeSitters).id;
+            state.lounge.raiseTimer = 25;
+          } else {
+            state.lounge.raiseAgentId = null;
+          }
+        }
+      }
+
+      function updateSimulation() {
+        state.tick += 1;
+        updateMahjongEvent();
+        updatePantryParticles();
+        updateLoungeAnimation();
+        state.agents.forEach(updateAgent);
+      }
+
+      function drawRect(x, y, w, h, color, alpha = 1) {
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = color;
+        ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
+        ctx.restore();
+      }
+
+      function drawPixelTextBar(x, y, w, color) {
+        drawRect(x, y, w, 2, color, 0.8);
+      }
+
+      function drawBackground() {
+        drawRect(0, 0, STAGE_WIDTH, STAGE_HEIGHT, "#080d1a");
+
+        const stars = [
+          [42, 22], [94, 34], [138, 18], [196, 26], [242, 44], [304, 20], [352, 34], [412, 22],
+          [762, 26], [804, 18], [846, 34]
+        ];
+        ctx.fillStyle = "rgba(214,228,255,0.62)";
+        stars.forEach(([x, y]) => ctx.fillRect(x, y, 2, 2));
+
+        drawRect(10, 8, 720, 472, "#131d30");
+        drawRect(10, 8, 720, 2, "#223350");
+        drawRect(10, 8, 2, 472, "#223350");
+        drawRect(728, 8, 2, 472, "#0c1520");
+        drawRect(10, 478, 720, 2, "#0c1520");
+
+        drawRect(748, 56, 98, 372, "#0f1728");
+        drawRect(748, 56, 98, 2, "#223350");
+        drawRect(748, 56, 2, 372, "#223350");
+        drawRect(844, 56, 2, 372, "#0c1520");
+        drawRect(748, 426, 98, 2, "#0c1520");
+
+        for (let index = 0; index < 6; index += 1) {
+          const x = index % 2 === 0 ? 770 : 812;
+          const y = 88 + Math.floor(index / 2) * 48;
+          drawRect(x, y, 24, 24, index % 2 === 0 ? "#17253a" : "#142132");
+          drawRect(x, y, 24, 2, "#23354f");
+          drawRect(x, y, 2, 24, "#23354f");
+          drawRect(x + 7, y + 8, 10, 8, index % 3 === 0 ? "#38bdf8" : index % 3 === 1 ? "#f59e0b" : "#22c55e");
+        }
+      }
+
+      function drawFloors() {
+        const roomFills = {
+          mahjong: "#1c3820",
+          pantry: "#3a2810",
+          quiet: "#12102a",
+          lounge: "#181e2c",
+          work: "#2c1e0a"
+        };
+
+        for (const room of ROOM_ORDER) {
+          const bounds = BOUNDS[room];
+          drawRect(bounds.x1 - 7, bounds.y1 - 7, bounds.x2 - bounds.x1 + 14, bounds.y2 - bounds.y1 + 14, roomFills[room]);
+
+          ctx.save();
+          ctx.globalAlpha = room === "work" ? 0.05 : 0.04;
+          ctx.strokeStyle = room === "work" ? "#c8a060" : "#aabbcc";
+          ctx.lineWidth = 1;
+          for (let x = bounds.x1 - 6; x <= bounds.x2 + 6; x += room === "work" ? 6 : 20) {
+            ctx.beginPath();
+            ctx.moveTo(x, bounds.y1 - 6);
+            ctx.lineTo(x, bounds.y2 + 6);
+            ctx.stroke();
+          }
+          for (let y = bounds.y1 - 6; y <= bounds.y2 + 6; y += room === "work" ? 6 : 20) {
+            ctx.beginPath();
+            ctx.moveTo(bounds.x1 - 6, y);
+            ctx.lineTo(bounds.x2 + 6, y);
+            ctx.stroke();
+          }
+          ctx.restore();
+        }
+
+        const highlight = BOUNDS[state.activeRoom];
+        drawRect(
+          highlight.x1 - 6,
+          highlight.y1 - 6,
+          highlight.x2 - highlight.x1 + 12,
+          highlight.y2 - highlight.y1 + 12,
+          "#f0d070",
+          0.05
+        );
+      }
+
+      function drawWalls() {
+        drawRect(256, 60, 8, 108, "#131d30");
+        drawRect(256, 205, 8, 39, "#131d30");
+        drawRect(254, 166, 2, 41, "#223350");
+        drawRect(264, 166, 2, 41, "#223350");
+        drawRect(254, 166, 12, 2, "#223350");
+
+        drawRect(460, 16, 8, 94, "#131d30");
+        drawRect(460, 150, 8, 94, "#131d30");
+        drawRect(458, 108, 2, 44, "#223350");
+        drawRect(468, 108, 2, 44, "#223350");
+        drawRect(458, 108, 12, 2, "#223350");
+
+        drawRect(18, 244, 238, 8, "#131d30");
+        drawRect(264, 244, 38, 8, "#131d30");
+        drawRect(372, 244, 92, 8, "#131d30");
+        drawRect(300, 242, 2, 10, "#223350");
+        drawRect(374, 242, 2, 10, "#223350");
+        drawRect(468, 244, 250, 8, "#131d30");
+
+        drawRect(374, 252, 8, 88, "#131d30");
+        drawRect(374, 395, 8, 69, "#131d30");
+        drawRect(372, 338, 2, 59, "#223350");
+        drawRect(382, 338, 2, 59, "#223350");
+        drawRect(372, 338, 12, 2, "#223350");
+
+        drawRect(18, 58, 238, 2, "#223350");
+        drawRect(264, 14, 196, 2, "#223350");
+        drawRect(468, 56, 250, 2, "#223350");
+        drawRect(18, 250, 356, 2, "#223350");
+        drawRect(382, 250, 340, 2, "#223350");
+
+        drawRect(16, 60, 2, 184, "#223350");
+        drawRect(262, 16, 2, 228, "#223350");
+        drawRect(466, 58, 2, 186, "#223350");
+        drawRect(16, 252, 2, 212, "#223350");
+        drawRect(380, 252, 2, 212, "#223350");
+
+        [
+          [258, 172, 6, 28],
+          [462, 114, 6, 30],
+          [92, 246, 52, 6],
+          [312, 244, 56, 8],
+          [578, 244, 50, 8],
+          [374, 346, 8, 44]
+        ].forEach(([x, y, w, h]) => {
+          drawRect(x, y, w, h, "#7b8796");
+          drawRect(x, y, w, 2, "#c6d1db");
+        });
+      }
+
+      function drawMahjongBack() {
+        drawRect(24, 68, 68, 46, "#3a2810");
+        drawRect(27, 71, 62, 40, "#4a5c38");
+        drawRect(27, 86, 62, 10, "#384828");
+        drawRect(48, 72, 14, 26, "#608855");
+        drawRect(35, 76, 12, 22, "#507848");
+        drawRect(214, 74, 26, 8, "#1e2430");
+        drawRect(216, 76, 22, 4, "#2b364a");
+        drawRect(26, 116, 10, 18, "#c88820");
+        drawRect(29, 134, 4, 4, "#f0a820");
+        drawRect(237, 100, 10, 18, "#c88820");
+        drawRect(240, 118, 4, 4, "#f0a820");
+        drawRect(22, 210, 14, 10, "#5a3a18");
+        drawRect(18, 195, 18, 16, "#1a6016");
+        drawRect(20, 185, 14, 12, "#228018");
+        drawRect(240, 210, 14, 10, "#5a3a18");
+        drawRect(238, 196, 16, 14, "#1a6016");
+        drawRect(240, 188, 12, 10, "#228018");
+      }
+
+      function drawMahjongChairs() {
+        const chairs = ROOM_SEATS.mahjong;
+        chairs.forEach((seat) => {
+          if (seat.key.endsWith("north") || seat.key.endsWith("south")) {
+            drawRect(seat.x - 14, seat.y - 6, 28, 12, "#3a2208");
+            drawRect(seat.x - 11, seat.y - 4, 22, 8, "#4a2e10");
+          } else {
+            drawRect(seat.x - 6, seat.y - 14, 12, 28, "#3a2208");
+            drawRect(seat.x - 4, seat.y - 11, 8, 22, "#4a2e10");
+          }
+        });
+      }
+
+      function drawMahjongSurface() {
+        drawRect(MAHJONG_TABLE.x, MAHJONG_TABLE.y, MAHJONG_TABLE.size, MAHJONG_TABLE.size, "#4a2e10");
+        drawRect(MAHJONG_TABLE.x + 4, MAHJONG_TABLE.y + 4, MAHJONG_TABLE.size - 8, MAHJONG_TABLE.size - 8, "#1f5a1c");
+        drawRect(MAHJONG_TABLE.x + 3, MAHJONG_TABLE.y + 3, MAHJONG_TABLE.size - 6, 2, "#d9b45a");
+        drawRect(MAHJONG_TABLE.x + 3, MAHJONG_TABLE.y + MAHJONG_TABLE.size - 5, MAHJONG_TABLE.size - 6, 2, "#d9b45a");
+        drawRect(MAHJONG_TABLE.x + 3, MAHJONG_TABLE.y + 3, 2, MAHJONG_TABLE.size - 6, "#d9b45a");
+        drawRect(MAHJONG_TABLE.x + MAHJONG_TABLE.size - 5, MAHJONG_TABLE.y + 3, 2, MAHJONG_TABLE.size - 6, "#d9b45a");
+      }
+
+      function drawPantryBack() {
+        drawRect(264, 16, 196, 32, "#3a2510");
+        drawRect(264, 16, 196, 3, "#5a3a18");
+        for (let index = 0; index < 5; index += 1) {
+          drawRect(267 + index * 38, 20, 34, 24, "#321e08");
+        }
+        drawRect(432, 64, 28, 54, "#2840a0");
+        drawRect(434, 66, 24, 50, "#1a3080");
+        drawRect(434, 66, 24, 25, "#243898");
+        drawRect(430, 125, 34, 2, "#3a2810");
+        drawRect(430, 145, 34, 2, "#3a2810");
+        drawRect(430, 165, 34, 2, "#3a2810");
+        drawRect(430, 125, 2, 44, "#3a2810");
+        drawRect(462, 125, 2, 44, "#3a2810");
+        const bottleColors = ["#b02020", "#204090", "#208040", "#a06020"];
+        bottleColors.forEach((color, index) => drawRect(434 + index * 6, 108, 5, 17, color));
+        drawRect(334, 210, 12, 12, "#5a3a18");
+        drawRect(330, 193, 18, 18, "#1a6016");
+        drawRect(333, 182, 12, 14, "#228018");
+      }
+
+      function drawPantryChairs() {
+        drawRect(296, 165, 12, 8, "#3a2208");
+        drawRect(356, 165, 12, 8, "#3a2208");
+        drawRect(310, 188, 16, 8, "#3a2208");
+      }
+
+      function drawPantrySurface() {
+        drawRect(264, 48, 196, 18, "#4a2e10");
+        drawRect(264, 48, 196, 3, "#6a4820");
+        drawRect(300, 160, 60, 38, "#4a2e10");
+        drawRect(300, 160, 60, 3, "#6a4820");
+        drawRect(PANTRY_KETTLE.x, PANTRY_KETTLE.y, 10, 7, "#6c4c2c");
+        drawRect(PANTRY_KETTLE.x + 7, PANTRY_KETTLE.y - 2, 4, 2, "#d8c8a8");
+      }
+
+      function drawQuietBack() {
+        const bookColors = ["#b02020", "#2050a0", "#208040", "#a06020", "#702090", "#c04828"];
+        drawRect(680, 58, 40, 186, "#2a1e0e");
+        drawRect(680, 58, 40, 3, "#3a2a14");
+        [80, 118, 156, 194].forEach((offset) => drawRect(680, 58 + offset, 40, 3, "#3a2a14"));
+        for (let row = 0; row < 4; row += 1) {
+          for (let col = 0; col < 5; col += 1) {
+            drawRect(682 + col * 7, 68 + row * 38, 6, 28, bookColors[(row * 5 + col) % bookColors.length]);
+          }
+        }
+        drawRect(476, 75, 10, 16, "#c88820");
+        drawRect(479, 91, 4, 3, "#f0a820");
+        drawRect(480, 218, 12, 10, "#5a3a18");
+        drawRect(477, 204, 16, 15, "#1a6016");
+        drawRect(479, 196, 12, 10, "#228018");
+      }
+
+      function drawQuietChairs() {
+        drawRect(540, 192, 36, 28, "#1a2438");
+        drawRect(540, 192, 36, 4, "#242e48");
+        drawRect(536, 196, 6, 18, "#151e30");
+        drawRect(570, 196, 6, 18, "#151e30");
+        drawRect(538, 214, 6, 10, "#111820");
+        drawRect(566, 214, 6, 10, "#111820");
+      }
+
+      function drawQuietSurface() {
+        drawRect(518, 158, 120, 38, "#5a3818");
+        drawRect(518, 158, 120, 3, "#7a4e28");
+        drawRect(518, 196, 8, 42, "#4a2e10");
+        drawRect(630, 196, 8, 42, "#4a2e10");
+        drawRect(548, 126, 36, 28, "#151e30");
+        drawRect(550, 128, 32, 24, "#0a1220");
+        drawRect(552, 130, 28, 20, "#1840b0");
+        drawPixelTextBar(555, 133, 22, "#8ecbff");
+        drawPixelTextBar(557, 139, 14, "#5a8cff");
+      }
+
+      function drawLoungeBack() {
+        const snackColors = ["#e8a020", "#20b040", "#c02828", "#2060b0"];
+        drawRect(20, 268, 28, 68, "#b02020");
+        drawRect(22, 272, 24, 36, "#08202e");
+        for (let row = 0; row < 2; row += 1) {
+          for (let col = 0; col < 2; col += 1) {
+            drawRect(24 + col * 10, 274 + row * 16, 9, 13, snackColors[row * 2 + col]);
+          }
+        }
+        drawRect(22, 312, 24, 8, "#303030");
+        drawRect(28, 322, 12, 8, "#909090");
+
+        drawRect(LOUNGE_SCREEN.x, LOUNGE_SCREEN.y, LOUNGE_SCREEN.w, LOUNGE_SCREEN.h, "#0d1830");
+        drawRect(LOUNGE_SCREEN.x + 2, LOUNGE_SCREEN.y + 2, LOUNGE_SCREEN.w - 4, LOUNGE_SCREEN.h - 4, "#060e1e");
+        drawRect(195, 260, 64, 14, "#2a3020");
+        drawRect(197, 262, 60, 10, "#344028");
+        for (let offset = 4; offset <= 52; offset += 8) {
+          drawRect(199 + offset, 265, 4, 3, "#5d7f48");
+        }
+        drawRect(296, 265, 14, 12, "#5a3a18");
+        drawRect(292, 250, 18, 16, "#1a6016");
+        drawRect(295, 240, 12, 13, "#228018");
+      }
+
+      function drawLoungeChairs() {
+        drawRect(130, 390, 130, 38, "#1e2a48");
+        drawRect(128, 388, 134, 10, "#182038");
+        drawRect(128, 388, 8, 38, "#182038");
+        drawRect(254, 388, 8, 38, "#182038");
+        drawRect(130, 365, 130, 26, "#182038");
+        drawRect(130, 362, 130, 4, "#22304e");
+        drawRect(136, 378, 52, 10, "#1a2640");
+        drawRect(192, 378, 52, 10, "#1a2640");
+      }
+
+      function drawLoungeSurface() {
+        drawRect(165, 428, 80, 18, "#3a2810");
+        drawRect(165, 428, 80, 3, "#5a3a18");
+        drawRect(167, 440, 8, 8, "#2a1e0a");
+        drawRect(231, 440, 8, 8, "#2a1e0a");
+
+        ctx.fillStyle = "rgba(255,255,255,0.8)";
+        state.lounge.stars.forEach((star) => {
+          ctx.fillRect(Math.round(star.x), Math.round(star.y), 1, 1);
+        });
+
+        drawRect(state.lounge.craftX, 316 + Math.sin(state.tick * 0.01) * 0.3, 24, 12, "#3a4050");
+        drawRect(state.lounge.craftX - 2, 319, 4, 6, "#4a5068");
+        drawRect(state.lounge.craftX + 20, 319, 4, 6, "#4a5068");
+        drawRect(state.lounge.craftX + 10, 310, 6, 10, "#5060a0");
+      }
+
+      function drawWorkBack() {
+        [[460, 256], [540, 256], [640, 256]].forEach(([x, y]) => {
+          drawRect(x, y, 34, 5, "#c89828");
+          drawRect(x + 13, y + 5, 8, 4, "#f0c020");
+        });
+        drawRect(384, 260, 12, 12, "#5a3a18");
+        drawRect(380, 245, 16, 16, "#1a6016");
+        drawRect(383, 235, 10, 12, "#228018");
+        drawRect(706, 260, 12, 12, "#5a3a18");
+        drawRect(702, 245, 16, 16, "#1a6016");
+        drawRect(705, 235, 10, 12, "#228018");
+      }
+
+      function drawWorkChairs() {
+        const deskSeats = ROOM_SEATS.work.slice(0, 2);
+        deskSeats.forEach((seat) => {
+          drawRect(seat.x - 25, seat.y, 50, 12, "#2a1e10");
+          drawRect(seat.x - 21, seat.y + 2, 42, 8, "#1a2840");
+        });
+        drawRect(611, 430, 18, 8, "#2a1e10");
+        drawRect(423, 430, 18, 8, "#2a1e10");
+      }
+
+      function drawWorkSurface() {
+        ROOM_SEATS.work.slice(0, 2).forEach((seat, index) => {
+          const deskX = seat.x - 22;
+          const deskY = seat.y - 26;
+          drawRect(deskX, deskY, 44, 24, "#5a3818");
+          drawRect(deskX, deskY, 44, 3, "#7a4e28");
+          drawRect(deskX + 12, deskY - 16, 24, 18, "#151e30");
+          drawRect(deskX + 13, deskY - 15, 22, 15, "#0a1220");
+          drawRect(deskX + 14, deskY - 14, 20, 13, "#1840b0");
+          drawPixelTextBar(deskX + 17, deskY - 11, 14, "#94d3ff");
+          drawPixelTextBar(deskX + 19, deskY - 6, 10, "#5785ff");
+          drawRect(deskX + 17, deskY + 24, 10, 4, "#1a2030");
+          drawRect(deskX + 29, deskY - 3, 6, 5, index % 2 === 0 ? "#b04020" : "#507060");
+        });
+
+        drawRect(600, 410, 36, 10, "#5a3818");
+        drawRect(600, 410, 36, 3, "#7a4e28");
+        drawRect(414, 410, 36, 10, "#5a3818");
+        drawRect(414, 410, 36, 3, "#7a4e28");
+      }
+
+      function drawWalkingAgent(agent) {
+        const walkCycle = Math.floor(agent.walkFrame / 8) % 4;
+        const leftLegOffset = [0, -7, 0, 7][walkCycle];
+        const rightLegOffset = [0, 7, 0, -7][walkCycle];
+        const leftArmOffset = [0, -3, 0, 3][walkCycle];
+        const rightArmOffset = [0, 3, 0, -3][walkCycle];
+        const x = Math.round(agent.x);
+        const y = Math.round(agent.y);
+
+        drawRect(x - 5 + leftLegOffset, y, 5, 10, agent.pants);
+        drawRect(x + 1 + rightLegOffset, y, 5, 10, agent.pants);
+        drawRect(x - 8 + leftArmOffset, y - 7, 4, 8, agent.shirt);
+        drawRect(x + 8 + rightArmOffset, y - 7, 4, 8, agent.shirt);
+        drawRect(x - 4, y - 10, 8, 10, agent.shirt);
+        drawRect(x - 5, y - 18, 10, 8, agent.skin);
+        drawRect(x - 5, y - 18, 10, 3, agent.hair);
+      }
+
+      function getMahjongPose(agent) {
+        const phaseAge = state.tick - state.mahjong.actorPhaseStart;
+        const isActor = state.mahjong.actorId === agent.id;
+        const seatedMahjong = state.agents.filter(
+          (entry) => entry.room === "mahjong" && entry.state === "seated"
+        );
+        const actorArmLift =
+          isActor && phaseAge >= 0 && phaseAge < 30
+            ? -5
+            : 0;
+        const headTilt =
+          !isActor && phaseAge >= 60 && phaseAge < 75 && seatedMahjong.length > 1
+            ? seatedMahjong.indexOf(agent) % 2 === 0
+              ? -2
+              : 2
+            : 0;
+        return { actorArmLift, headTilt, phaseAge };
+      }
+
+      function drawMahjongAgent(agent) {
+        const facing = getSeatFacing(agent);
+        const { actorArmLift, headTilt } = getMahjongPose(agent);
+        const x = agent.x;
+        const y = agent.y;
+
+        if (facing === "up" || facing === "down") {
+          const torsoY = facing === "down" ? y - 2 : y - 12;
+          const headY = facing === "down" ? y - 12 : y;
+          drawRect(x - 6, torsoY, 12, 10, agent.shirt);
+          drawRect(x - 8, torsoY + 1 + actorArmLift, 2, 8, agent.shirt);
+          drawRect(x + 6, torsoY + 1 + actorArmLift, 2, 8, agent.shirt);
+          drawRect(x - 4, torsoY + 10, 3, 4, agent.pants);
+          drawRect(x + 1, torsoY + 10, 3, 4, agent.pants);
+          drawRect(x - 5 + headTilt, headY, 10, 8, agent.skin);
+          drawRect(x - 5 + headTilt, facing === "down" ? headY : headY + 5, 10, 3, agent.hair);
+          return;
+        }
+
+        const torsoX = facing === "right" ? x - 2 : x - 10;
+        const headX = facing === "right" ? x - 13 : x + 3;
+        const armShift = facing === "right" ? actorArmLift : -actorArmLift;
+        drawRect(torsoX, y - 6, 10, 12, agent.shirt);
+        drawRect(torsoX + 10 + armShift, y - 8, 4, 3, agent.shirt);
+        drawRect(torsoX + 10 + armShift, y + 5, 4, 3, agent.shirt);
+        drawRect(torsoX + 2, y + 6, 3, 4, agent.pants);
+        drawRect(torsoX + 5, y + 6, 3, 4, agent.pants);
+        drawRect(headX, y - 4 + headTilt, 10, 8, agent.skin);
+        drawRect(facing === "right" ? headX : headX + 7, y - 4 + headTilt, 3, 8, agent.hair);
+      }
+
+      function drawPantryAgent(agent) {
+        const x = agent.x;
+        const y = agent.y;
+        const armOffset = Math.round(Math.sin((state.tick % 36) / 36 * Math.PI * 2) * 4);
+
+        drawRect(x - 4, y - 9, 8, 10, agent.shirt);
+        drawRect(x - 8, y - 8 + armOffset, 4, 8, agent.shirt);
+        drawRect(x + 4, y - 8 - armOffset, 4, 8, agent.shirt);
+        drawRect(x - 3, y + 1, 5, 10, agent.pants);
+        drawRect(x + 2, y + 1, 5, 10, agent.pants);
+        drawRect(x - 5, y - 17, 10, 8, agent.skin);
+        drawRect(x - 5, y - 17, 10, 3, agent.hair);
+      }
+
+      function drawQuietAgent(agent) {
+        const x = agent.x;
+        const y = agent.y;
+        const pause = agent.action === "think_pause";
+        const period = state.tick % 18;
+        const leftHandY = pause ? y - 7 : y - (period < 9 ? 8 : 12);
+        const rightHandY = pause ? y - 7 : y - (period < 9 ? 12 : 8);
+
+        drawRect(x - 6, y - 6, 12, 10, agent.shirt);
+        drawRect(x - 5, y + 4, 5, 5, agent.pants);
+        drawRect(x + 1, y + 4, 5, 5, agent.pants);
+        drawRect(x - 5, y - 15, 10, 8, agent.skin);
+        drawRect(x - 5, y - 15, 10, 3, agent.hair);
+        drawRect(x - 7, leftHandY, 4, 4, agent.skin);
+        drawRect(x + 3, rightHandY, 4, 4, agent.skin);
+
+        if (pause) {
+          drawRect(x - 6, y - 24, 2, 2, "#ffffff");
+          drawRect(x - 1, y - 24, 2, 2, "#ffffff");
+          drawRect(x + 4, y - 24, 2, 2, "#ffffff");
+        }
+      }
+
+      function drawLoungeAgent(agent) {
+        const x = agent.x;
+        const y = agent.y + Math.sin(state.tick * 0.02 + state.agents.indexOf(agent)) * 1.2;
+        const armLift = state.lounge.raiseTimer > 0 && state.lounge.raiseAgentId === agent.id ? -6 : 0;
+
+        drawRect(x - 6, y - 4, 12, 9, agent.shirt);
+        drawRect(x - 8, y - 2 + armLift, 4, 8, agent.shirt);
+        drawRect(x + 6, y - 2, 4, 8, agent.shirt);
+        drawRect(x - 4, y + 5, 5, 6, agent.pants);
+        drawRect(x + 1, y + 5, 5, 6, agent.pants);
+        drawRect(x - 12, y - 5, 10, 8, agent.skin);
+        drawRect(x - 4, y - 5, 2, 8, agent.hair);
+      }
+
+      function drawWorkAgent(agent) {
+        const x = agent.x;
+        const y = agent.y;
+
+        if (agent.action === "stretch") {
+          drawRect(x - 4, y - 15, 8, 15, agent.shirt);
+          drawRect(x - 9, y - 20, 4, 12, agent.shirt);
+          drawRect(x + 5, y - 20, 4, 12, agent.shirt);
+          drawRect(x - 6, y - 24, 10, 8, agent.skin);
+          drawRect(x - 6, y - 24, 10, 3, agent.hair);
+          drawRect(x - 5, y, 5, 9, agent.pants);
+          drawRect(x + 1, y, 5, 9, agent.pants);
+          return;
+        }
+
+        const period = state.tick % 12;
+        const leftHandY = y - (period < 6 ? 8 : 12);
+        const rightHandY = y - (period < 6 ? 12 : 8);
+        drawRect(x - 6, y - 7, 12, 10, agent.shirt);
+        drawRect(x - 5, y + 3, 5, 6, agent.pants);
+        drawRect(x + 1, y + 3, 5, 6, agent.pants);
+        drawRect(x - 5, y - 16, 10, 8, agent.skin);
+        drawRect(x - 5, y - 16, 10, 3, agent.hair);
+        drawRect(x - 7, leftHandY, 4, 4, agent.skin);
+        drawRect(x + 3, rightHandY, 4, 4, agent.skin);
+      }
+
+      function drawAgent(agent) {
+        if (agent.state !== "seated") {
+          drawWalkingAgent(agent);
+          return;
+        }
+
+        if (agent.room === "mahjong") {
+          drawMahjongAgent(agent);
+          return;
+        }
+
+        if (agent.room === "pantry") {
+          drawPantryAgent(agent);
+          return;
+        }
+
+        if (agent.room === "quiet") {
+          drawQuietAgent(agent);
+          return;
+        }
+
+        if (agent.room === "lounge") {
+          drawLoungeAgent(agent);
+          return;
+        }
+
+        drawWorkAgent(agent);
+      }
+
+      function drawForeground() {
+        state.mahjong.tableTiles.forEach((tile, index) => {
+          drawRect(tile.x, tile.y, 8, 4, index % 2 === 0 ? "#efe5cb" : "#ddd2b3");
+        });
+
+        if (state.mahjong.actorId) {
+          const actor = state.agents.find((agent) => agent.id === state.mahjong.actorId);
+          const phaseAge = state.tick - state.mahjong.actorPhaseStart;
+          if (actor && phaseAge >= 30 && phaseAge < 50) {
+            const facing = getSeatFacing(actor);
+            const hand =
+              facing === "up"
+                ? { x: actor.x, y: actor.y - 8 }
+                : facing === "down"
+                  ? { x: actor.x, y: actor.y + 8 }
+                  : facing === "left"
+                    ? { x: actor.x - 8, y: actor.y }
+                    : { x: actor.x + 8, y: actor.y };
+            const progress = (phaseAge - 30) / 20;
+            const tileX = hand.x + (MAHJONG_TABLE.centerX - hand.x) * progress;
+            const tileY = hand.y + (MAHJONG_TABLE.centerY - hand.y) * progress;
+            drawRect(tileX - 4, tileY - 2, 8, 4, "#f3ead5");
+          }
+          if (phaseAge >= 50 && phaseAge < 60) {
+            drawRect(MAHJONG_TABLE.centerX - 4, MAHJONG_TABLE.centerY - 2, 8, 4, "#f3ead5");
+          }
+        }
+
+        state.pantryParticles.forEach((particle) => {
+          drawRect(particle.x, particle.y, 2, 2, "#ffffff", particle.alpha);
+        });
+
+        drawRect(180, 422, 8, 6, "#b04020");
+        drawRect(230, 422, 8, 6, "#507060");
+      }
+
+      function renderScene() {
+        ctx.clearRect(0, 0, STAGE_WIDTH, STAGE_HEIGHT);
+        drawBackground();
+        drawFloors();
+        drawWalls();
+        drawMahjongBack();
+        drawPantryBack();
+        drawQuietBack();
+        drawLoungeBack();
+        drawWorkBack();
+        drawMahjongChairs();
+        drawPantryChairs();
+        drawQuietChairs();
+        drawLoungeChairs();
+        drawWorkChairs();
+        drawMahjongSurface();
+        drawPantrySurface();
+        drawQuietSurface();
+        drawLoungeSurface();
+        drawWorkSurface();
+
+        state.agents
+          .slice()
+          .sort((left, right) => left.y - right.y)
+          .forEach(drawAgent);
+
+        drawForeground();
+      }
+
+      function roomOccupants(room) {
+        return state.agents.filter((agent) => agent.room === room);
+      }
+
+      function updateAgentStrip() {
+        state.agents.forEach((agent) => {
+          const card = state.ui.agentPills.get(agent.id);
+          if (!card) return;
+          card.querySelector(".agent-state").textContent = stateLabel(agent);
+        });
+      }
+
+      function updateRoomButtons() {
+        ROOM_ORDER.forEach((room) => {
+          const status = getRoomStatus(room);
+          const tone = toneForStatus(status);
+          const badge = state.ui.badgeButtons.get(room);
+          const zone = state.ui.zoneButtons.get(room);
+          const card = state.ui.roomCards.get(room);
+          const label = state.ui.roomLabels.get(room);
+          const isActive = state.activeRoom === room;
+
+          if (badge) {
+            badge.querySelector(".room-badge-status").textContent = status;
+            badge.querySelector(".room-badge-dot").style.backgroundColor = tone;
+            badge.classList.toggle("is-active", isActive);
+          }
+
+          if (zone) {
+            zone.classList.toggle("is-active", isActive);
+          }
+
+          if (card) {
+            card.querySelector(".room-card-status").textContent = status;
+            card.querySelector(".room-card-status").style.color = tone;
+            card.querySelector(".room-card-copy").textContent = ROOM_COPY[room];
+            card.classList.toggle("is-active", isActive);
+          }
+
+          if (label) {
+            label.querySelector("span").textContent = status.toLowerCase();
+          }
+        });
+      }
+
+      function updateModal() {
+        const room = state.modalRoom;
+        if (!room) {
+          elements.modalLayer.hidden = true;
+          return;
+        }
+
+        const occupants = roomOccupants(room);
+        const status = getRoomStatus(room);
+        const neighbors = getAdjacentRooms(room);
+        elements.modalLayer.hidden = false;
+        elements.modalTitle.textContent = ROOM_META[room].label;
+        elements.modalStatusText.textContent = status;
+        elements.modalStatusDot.style.backgroundColor = toneForStatus(status);
+        elements.modalCopy.textContent = ROOM_META[room].description;
+        elements.modalMeta.textContent = ROOM_META[room].statusHint;
+        elements.modalOccupants.innerHTML = "";
+        elements.modalLinks.innerHTML = "";
+
+        if (occupants.length === 0) {
+          const empty = document.createElement("span");
+          empty.className = "occupant-chip";
+          empty.textContent = "No agents in this room";
+          elements.modalOccupants.appendChild(empty);
+        } else {
+          occupants.forEach((agent) => {
+            const chip = document.createElement("span");
+            chip.className = "occupant-chip";
+            chip.innerHTML =
+              '<span class="occupant-chip-dot"></span>' +
+              "<strong>" + agent.id + "</strong>" +
+              "<span>" + stateLabel(agent) + "</span>";
+            chip.querySelector(".occupant-chip-dot").style.backgroundColor = agent.shirt;
+            elements.modalOccupants.appendChild(chip);
+          });
+        }
+
+        neighbors.forEach((roomKey) => {
+          const chip = document.createElement("span");
+          chip.className = "link-chip";
+          chip.textContent = "Door to " + ROOM_META[roomKey].label;
+          elements.modalLinks.appendChild(chip);
+        });
+      }
+
+      function updateUI() {
+        elements.handoffCount.textContent = String(state.handoffs);
+        elements.radioCopy.textContent =
+          RADIO_MESSAGES[Math.floor(state.tick / 300) % RADIO_MESSAGES.length];
+        updateAgentStrip();
+        updateRoomButtons();
+        updateModal();
+      }
+
+      function selectRoom(room) {
+        state.activeRoom = room;
+        state.modalRoom = room;
+        updateUI();
+      }
+
+      function closeModal() {
+        state.modalRoom = null;
+        updateModal();
+      }
+
+      function buildUI() {
+        ROOM_ORDER.forEach((room) => {
+          const meta = ROOM_META[room];
+          const bounds = BOUNDS[room];
+          const zoneButton = document.createElement("button");
+          zoneButton.type = "button";
+          zoneButton.className = "room-zone";
+          zoneButton.id = "room-zone-" + room;
+          zoneButton.setAttribute("aria-label", meta.label);
+          const percentRect = rectToPercent({
+            x: bounds.x1 - 8,
+            y: bounds.y1 - 8,
+            w: bounds.x2 - bounds.x1 + 16,
+            h: bounds.y2 - bounds.y1 + 16
+          });
+          zoneButton.style.left = percentRect.left + "%";
+          zoneButton.style.top = percentRect.top + "%";
+          zoneButton.style.width = percentRect.width + "%";
+          zoneButton.style.height = percentRect.height + "%";
+          zoneButton.addEventListener("click", () => selectRoom(room));
+          elements.overlay.appendChild(zoneButton);
+          state.ui.zoneButtons.set(room, zoneButton);
+
+          const label = document.createElement("div");
+          label.className = "room-label";
+          label.innerHTML = "<strong>" + meta.label + "</strong><span>open</span>";
+          const labelPercent = pointToPercent(meta.labelX, meta.labelY);
+          label.style.left = labelPercent.left + "%";
+          label.style.top = labelPercent.top + "%";
+          elements.overlay.appendChild(label);
+          state.ui.roomLabels.set(room, label);
+
+          const badge = document.createElement("button");
+          badge.type = "button";
+          badge.className = "room-badge";
+          badge.id = "room-badge-" + room;
+          badge.innerHTML =
+            '<span class="room-badge-dot"></span>' +
+            '<span class="room-badge-label">' + meta.label + "</span>" +
+            '<strong class="room-badge-status">OPEN</strong>';
+          const badgePercent = pointToPercent(meta.badgeX, meta.badgeY);
+          badge.style.left = badgePercent.left + "%";
+          badge.style.top = badgePercent.top + "%";
+          badge.addEventListener("click", () => selectRoom(room));
+          elements.overlay.appendChild(badge);
+          state.ui.badgeButtons.set(room, badge);
+
+          const roomCard = document.createElement("button");
+          roomCard.type = "button";
+          roomCard.className = "room-card";
+          roomCard.id = "room-card-" + room;
+          roomCard.innerHTML =
+            '<span class="room-card-title">' + meta.label + "</span>" +
+            '<strong class="room-card-status">OPEN</strong>' +
+            '<span class="room-card-copy">' + ROOM_COPY[room] + "</span>";
+          roomCard.addEventListener("click", () => selectRoom(room));
+          elements.roomStrip.appendChild(roomCard);
+          state.ui.roomCards.set(room, roomCard);
+        });
+
+        state.agents.forEach((agent) => {
+          const pill = document.createElement("article");
+          pill.className = "agent-pill";
+          pill.id = "agent-pill-" + agent.id.toLowerCase();
+          pill.innerHTML =
+            '<div class="agent-pill-head">' +
+            '<span class="agent-dot"></span>' +
+            '<span class="agent-name">' + agent.id + "</span>" +
+            "</div>" +
+            '<span class="agent-state">' + stateLabel(agent) + "</span>";
+          pill.querySelector(".agent-dot").style.backgroundColor = agent.shirt;
+          elements.agentStrip.appendChild(pill);
+          state.ui.agentPills.set(agent.id, pill);
+        });
+
+        elements.modalBackdrop.addEventListener("click", closeModal);
+        elements.modalClose.addEventListener("click", closeModal);
+      }
+
+      function renderGameToText() {
+        const payload = {
+          coordSystem: "origin top-left, +x right, +y down",
+          tick: state.tick,
+          activeRoom: state.activeRoom,
+          modalRoom: state.modalRoom,
+          handoffs: state.handoffs,
+          rooms: Object.fromEntries(
+            ROOM_ORDER.map((room) => [room, { status: getRoomStatus(room), count: roomOccupants(room).length }])
+          ),
+          agents: state.agents.map((agent) => ({
+            id: agent.id,
+            room: agent.room,
+            homeRoom: agent.homeRoom,
+            state: agent.state,
+            action: agent.action || roomAction(agent.room),
+            x: Number(agent.x.toFixed(1)),
+            y: Number(agent.y.toFixed(1)),
+            moving: agent.moving
+          }))
+        };
+        return JSON.stringify(payload);
+      }
+
+      let rafId = 0;
+      let lastTime = 0;
+
+      function stepFrame() {
+        updateSimulation();
+        renderScene();
+        updateUI();
+      }
+
+      function animate(time) {
+        if (!lastTime) {
+          lastTime = time;
+        }
+
+        const delta = time - lastTime;
+        if (delta >= FRAME_MS) {
+          const steps = Math.max(1, Math.floor(delta / FRAME_MS));
+          for (let i = 0; i < steps; i += 1) {
+            stepFrame();
+          }
+          lastTime = time;
+        }
+
+        rafId = window.requestAnimationFrame(animate);
+      }
+
+      function init() {
+        state.agents = makeInitialAgents();
+        state.lounge.stars = createLoungeStars();
+        buildUI();
+        updateUI();
+        renderScene();
+        rafId = window.requestAnimationFrame(animate);
+      }
+
+      window.render_game_to_text = renderGameToText;
+      window.advanceTime = (ms) => {
+        const steps = Math.max(1, Math.round(ms / FRAME_MS));
+        for (let index = 0; index < steps; index += 1) {
+          stepFrame();
+        }
+      };
+      window.__coworking_state__ = state;
+
+      init();
+    </script>
+  </body>
+</html>

@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Press+Start+2P&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;700&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -6,17 +6,26 @@
 
 :root {
   color-scheme: dark;
-  font-family: "IBM Plex Mono", monospace;
-  background: #09070d;
-  color: #f5e6bf;
-  --pixel-ink: #f5e6bf;
-  --pixel-panel: #14101c;
-  --pixel-panel-alt: #0f0c15;
-  --pixel-shadow: rgba(0, 0, 0, 0.52);
+  font-family: "Space Grotesk", sans-serif;
+  background: #071018;
+  color: #eef3f5;
+  --pixel-ink: #eef3f5;
+  --pixel-panel: rgba(9, 15, 22, 0.94);
+  --pixel-panel-alt: rgba(6, 11, 18, 0.9);
+  --pixel-shadow: rgba(0, 0, 0, 0.44);
   --pixel-floor: #4e3a2e;
   --pixel-floor-dark: #2f211b;
   --pixel-window: #31586b;
   --pixel-window-glow: rgba(118, 192, 199, 0.2);
+  --surface-0: #071018;
+  --surface-1: rgba(9, 16, 24, 0.92);
+  --surface-2: rgba(14, 22, 32, 0.84);
+  --surface-highlight: rgba(255, 255, 255, 0.05);
+  --surface-border: rgba(231, 240, 245, 0.1);
+  --surface-shadow: rgba(0, 0, 0, 0.34);
+  --accent-cool: #82c0d8;
+  --accent-warm: #e0a36b;
+  --accent-good: #8dd39c;
 }
 
 * {
@@ -24,6 +33,7 @@
 }
 
 html {
+  min-height: 100%;
   scroll-behavior: smooth;
 }
 
@@ -31,17 +41,27 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background-color: #09070d;
+  background-color: var(--surface-0);
   background-image:
-    radial-gradient(circle at top, rgba(42, 32, 59, 0.6), transparent 36%),
-    radial-gradient(circle at 15% 15%, rgba(88, 178, 169, 0.09), transparent 18%),
-    linear-gradient(90deg, rgba(245, 230, 191, 0.04) 1px, transparent 1px),
-    linear-gradient(rgba(245, 230, 191, 0.035) 1px, transparent 1px);
+    radial-gradient(circle at top, rgba(126, 173, 204, 0.18), transparent 24%),
+    radial-gradient(circle at 10% 18%, rgba(224, 163, 107, 0.12), transparent 14%),
+    radial-gradient(circle at 82% 12%, rgba(99, 136, 168, 0.14), transparent 18%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 22%),
+    linear-gradient(90deg, rgba(233, 242, 247, 0.03) 1px, transparent 1px),
+    linear-gradient(rgba(233, 242, 247, 0.025) 1px, transparent 1px);
   background-size:
     auto,
     auto,
-    26px 26px,
-    26px 26px;
+    auto,
+    auto,
+    32px 32px,
+    32px 32px;
+  color: var(--pixel-ink);
+  line-height: 1.5;
+}
+
+#root {
+  min-height: 100vh;
 }
 
 button,
@@ -50,29 +70,48 @@ textarea {
   font: inherit;
 }
 
+input,
+textarea {
+  font-family: "IBM Plex Mono", monospace;
+}
+
 button {
   cursor: pointer;
 }
 
 ::selection {
-  background: rgba(88, 178, 169, 0.35);
-  color: #f5e6bf;
+  background: rgba(130, 192, 216, 0.3);
+  color: #f7fbfd;
 }
 
 .panel {
-  border: 2px solid rgba(245, 230, 191, 0.15);
-  background: rgba(20, 16, 28, 0.95);
-  box-shadow: 0 0 0 2px #f5e6bf, 6px 6px 0 0 rgba(0, 0, 0, 0.48);
-  backdrop-filter: blur(6px);
+  position: relative;
+  border: 1px solid var(--surface-border);
+  border-radius: 28px;
+  background: linear-gradient(180deg, var(--surface-1), var(--pixel-panel-alt));
+  box-shadow:
+    0 24px 64px var(--surface-shadow),
+    inset 0 1px 0 var(--surface-highlight);
+  backdrop-filter: blur(18px);
+}
+
+.panel::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.025);
+  pointer-events: none;
 }
 
 .pixel-label {
-  font-family: "Press Start 2P", monospace;
-  font-size: 0.62rem;
-  line-height: 1.5;
-  letter-spacing: 0.08em;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: rgba(245, 230, 191, 0.56);
+  color: rgba(228, 237, 241, 0.5);
 }
 
 .approval-chip {

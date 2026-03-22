@@ -294,7 +294,7 @@ gateway.subscribe(
   }
 );
 
-const port = Number(process.env.PORT ?? 8787);
+const port = Number(process.env.PORT ?? 8811);
 server.listen(port, () => {
   if (process.env.CLAWCONTROL_BOOTSTRAP_DEMOS === "true") {
     gateway.bootstrapDemo();

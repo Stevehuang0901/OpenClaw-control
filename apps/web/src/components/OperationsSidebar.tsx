@@ -122,8 +122,8 @@ export function OperationsSidebar({
     : openclaw.gateway.error ?? "Gateway probe needed";
 
   return (
-    <aside className="panel flex lg:sticky lg:top-3 lg:h-[calc(100vh-1.5rem)] lg:flex-col">
-      <div className="border-b-2 border-ink/12 px-3 py-3">
+    <aside className="panel flex flex-col overflow-hidden lg:sticky lg:top-3 lg:h-[calc(100vh-1.5rem)]">
+      <div className="border-b border-white/8 px-4 py-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2.5">
             <BrandMark />
@@ -132,8 +132,8 @@ export function OperationsSidebar({
               <h2 className="mt-1.5 truncate text-base font-bold tracking-[0.03em] text-ink">
                 Multi-agent control room
               </h2>
-              <p className="mt-1.5 text-[9px] uppercase tracking-[0.2em] text-ink/42">
-                Ops-first UI with 3D situational awareness
+              <p className="mt-1.5 text-[10px] uppercase tracking-[0.18em] text-ink/42">
+                Workflow-first shell with office telemetry
               </p>
             </div>
           </div>
@@ -144,7 +144,7 @@ export function OperationsSidebar({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-1.5 border-b-2 border-ink/12 px-3 py-3">
+      <div className="grid grid-cols-2 gap-2 border-b border-white/8 px-4 py-4">
         <CompactStat label="Live" value={String(liveWorkflows)} tone="neutral" />
         <CompactStat
           label="Approvals"
@@ -163,7 +163,7 @@ export function OperationsSidebar({
         />
       </div>
 
-      <nav className="flex-1 overflow-auto px-2.5 py-3">
+      <nav className="flex-1 overflow-auto px-3 py-4">
         <div className="space-y-4">
           {navigationGroups.map((group) => (
             <div key={group.label}>
@@ -182,10 +182,10 @@ export function OperationsSidebar({
                     <button
                       key={item.id}
                       type="button"
-                      className={`w-full rounded-none border px-2.5 py-2.5 text-left transition ${
+                      className={`w-full rounded-[22px] border px-3 py-3 text-left transition ${
                         active
-                          ? "border-teal/55 bg-[#21192c] text-ink shadow-pixel"
-                          : "border-ink/12 bg-[#14101c] text-ink/80 hover:border-ink/32 hover:bg-[#181320]"
+                          ? "border-teal/40 bg-teal/10 text-ink shadow-[0_18px_34px_rgba(0,0,0,0.18)]"
+                          : "border-white/8 bg-white/4 text-ink/80 hover:border-white/16 hover:bg-white/7"
                       }`}
                       onClick={() => onSelectPage(item.id)}
                     >
@@ -225,8 +225,8 @@ export function OperationsSidebar({
         </div>
       </nav>
 
-      <div className="border-t-2 border-ink/12 px-2.5 py-3">
-        <div className="rounded-none border border-ink/12 bg-[#120e19] px-2.5 py-3">
+      <div className="border-t border-white/8 px-3 py-4">
+        <div className="rounded-[22px] border border-white/8 bg-black/15 px-3 py-3">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="pixel-label">Control Bus</p>
@@ -254,7 +254,7 @@ export function OperationsSidebar({
 
 function BrandMark() {
   return (
-    <div className="inline-flex h-9 w-9 items-center justify-center border-2 border-ink bg-[#100d17] shadow-pixel">
+    <div className="inline-flex h-10 w-10 items-center justify-center rounded-[14px] border border-white/10 bg-white/5">
       <svg
         viewBox="0 0 16 16"
         aria-hidden="true"
@@ -283,10 +283,10 @@ function NavItemIcon({
 
   return (
     <span
-      className={`inline-flex h-9 w-9 items-center justify-center border ${
+      className={`inline-flex h-10 w-10 items-center justify-center rounded-[14px] border ${
         active
           ? "border-teal/42 bg-teal/10"
-          : "border-ink/12 bg-[#0f0c15]"
+          : "border-white/8 bg-black/15"
       } ${tone}`}
     >
       <SidebarPixelIcon name={name} />
@@ -384,10 +384,10 @@ function CompactStat({
       ? "border-mint/35 bg-mint/10 text-mint"
       : tone === "warn"
         ? "border-coral/35 bg-coral/10 text-coral"
-        : "border-ink/12 bg-[#100d17] text-ink";
+        : "border-white/8 bg-white/5 text-ink";
 
   return (
-    <div className={`rounded-none border-2 px-2.5 py-2.5 shadow-pixel ${toneClass}`}>
+    <div className={`rounded-[18px] border px-3 py-2.5 ${toneClass}`}>
       <p className="text-[8px] uppercase tracking-[0.22em] text-current">{label}</p>
       <p className="mt-1 text-base font-bold text-current">{value}</p>
     </div>
@@ -403,7 +403,7 @@ function StatusPill({
 }) {
   return (
     <span
-      className={`inline-flex items-center justify-center border px-2 py-1 text-[9px] uppercase tracking-[0.16em] ${
+      className={`inline-flex items-center justify-center rounded-full border px-2.5 py-1.5 text-[9px] uppercase tracking-[0.16em] ${
         tone === "good"
           ? "border-mint/35 bg-mint/10 text-mint"
           : "border-coral/35 bg-coral/10 text-coral"
@@ -416,7 +416,7 @@ function StatusPill({
 
 function FooterChip({ label }: { label: string }) {
   return (
-    <span className="inline-flex items-center justify-center border border-ink/12 bg-[#0f0c15] px-2 py-1 text-[9px] uppercase tracking-[0.16em] text-ink/60">
+    <span className="inline-flex items-center justify-center rounded-full border border-white/8 bg-white/5 px-2.5 py-1.5 text-[9px] uppercase tracking-[0.16em] text-ink/60">
       {label}
     </span>
   );

@@ -1,0 +1,296 @@
+- generic [ref=e4]:
+  - complementary [ref=e6]:
+    - generic [ref=e8]:
+      - generic [ref=e9]:
+        - img [ref=e11]
+        - generic [ref=e18]:
+          - paragraph [ref=e19]: ClawControl
+          - heading "Multi-agent control room" [level=2] [ref=e20]
+          - paragraph [ref=e21]: Workflow-first shell with office telemetry
+      - generic [ref=e22]: Live
+    - generic [ref=e23]:
+      - generic [ref=e24]:
+        - paragraph [ref=e25]: Live
+        - paragraph [ref=e26]: "0"
+      - generic [ref=e27]:
+        - paragraph [ref=e28]: Approvals
+        - paragraph [ref=e29]: "0"
+      - generic [ref=e30]:
+        - paragraph [ref=e31]: Gateway
+        - paragraph [ref=e32]: up
+      - generic [ref=e33]:
+        - paragraph [ref=e34]: Tokens
+        - paragraph [ref=e35]: "0"
+    - navigation [ref=e36]:
+      - generic [ref=e37]:
+        - generic [ref=e38]:
+          - generic [ref=e39]:
+            - paragraph [ref=e40]: Main
+            - generic [ref=e41]: "-"
+          - generic [ref=e42]:
+            - button "01 Office Live floor scene 0 live" [ref=e43] [cursor=pointer]:
+              - generic [ref=e44]:
+                - img [ref=e46]
+                - generic [ref=e52]:
+                  - generic [ref=e53]:
+                    - generic [ref=e54]: "01"
+                    - generic [ref=e55]: Office
+                  - generic [ref=e56]:
+                    - generic [ref=e57]: Live floor scene
+                    - generic [ref=e58]: 0 live
+            - button "02 Dashboard Crew and metrics metrics" [ref=e59] [cursor=pointer]:
+              - generic [ref=e60]:
+                - img [ref=e62]
+                - generic [ref=e67]:
+                  - generic [ref=e68]:
+                    - generic [ref=e69]: "02"
+                    - generic [ref=e70]: Dashboard
+                  - generic [ref=e71]:
+                    - generic [ref=e72]: Crew and metrics
+                    - generic [ref=e73]: metrics
+            - button "03 Activity Messages and events feed" [ref=e74] [cursor=pointer]:
+              - generic [ref=e75]:
+                - img [ref=e77]
+                - generic [ref=e86]:
+                  - generic [ref=e87]:
+                    - generic [ref=e88]: "03"
+                    - generic [ref=e89]: Activity
+                  - generic [ref=e90]:
+                    - generic [ref=e91]: Messages and events
+                    - generic [ref=e92]: feed
+        - generic [ref=e93]:
+          - generic [ref=e94]:
+            - paragraph [ref=e95]: Workflow
+            - generic [ref=e96]: "-"
+          - button "04 Approvals Release review desk 0 wait" [ref=e98] [cursor=pointer]:
+            - generic [ref=e99]:
+              - img [ref=e101]
+              - generic [ref=e107]:
+                - generic [ref=e108]:
+                  - generic [ref=e109]: "04"
+                  - generic [ref=e110]: Approvals
+                - generic [ref=e111]:
+                  - generic [ref=e112]: Release review desk
+                  - generic [ref=e113]: 0 wait
+        - generic [ref=e114]:
+          - generic [ref=e115]:
+            - paragraph [ref=e116]: Tools
+            - generic [ref=e117]: "-"
+          - generic [ref=e118]:
+            - button "05 Operations Gateway and usage ops" [ref=e119] [cursor=pointer]:
+              - generic [ref=e120]:
+                - img [ref=e122]
+                - generic [ref=e128]:
+                  - generic [ref=e129]:
+                    - generic [ref=e130]: "05"
+                    - generic [ref=e131]: Operations
+                  - generic [ref=e132]:
+                    - generic [ref=e133]: Gateway and usage
+                    - generic [ref=e134]: ops
+            - button "06 Skills Install and inspect market" [ref=e135] [cursor=pointer]:
+              - generic [ref=e136]:
+                - img [ref=e138]
+                - generic [ref=e143]:
+                  - generic [ref=e144]:
+                    - generic [ref=e145]: "06"
+                    - generic [ref=e146]: Skills
+                  - generic [ref=e147]:
+                    - generic [ref=e148]: Install and inspect
+                    - generic [ref=e149]: market
+    - generic [ref=e151]:
+      - generic [ref=e152]:
+        - generic [ref=e153]:
+          - paragraph [ref=e154]: Control Bus
+          - paragraph [ref=e155]: OpenClaw linked
+        - generic [ref=e156]: Check
+      - paragraph [ref=e157]: "missing scope: operator.read"
+      - generic [ref=e158]:
+        - generic [ref=e159]: 1 providers
+        - generic [ref=e160]: 0 running
+  - main [ref=e161]:
+    - generic [ref=e163]:
+      - generic [ref=e164]:
+        - generic [ref=e165]:
+          - paragraph [ref=e166]: Command Center
+          - generic [ref=e167]:
+            - paragraph [ref=e168]: Gateway
+            - paragraph [ref=e169]: Linked
+          - generic [ref=e170]:
+            - paragraph [ref=e171]: Focus
+            - paragraph [ref=e172]: Idle
+        - heading "Live office control" [level=1] [ref=e173]
+        - paragraph [ref=e174]: Dispatch from the right rail and use the floor scene as live telemetry.
+      - generic [ref=e175]:
+        - generic [ref=e176]:
+          - paragraph [ref=e177]: Queued
+          - paragraph [ref=e178]: "0"
+        - generic [ref=e179]:
+          - paragraph [ref=e180]: Approvals
+          - paragraph [ref=e181]: "0"
+        - generic [ref=e182]:
+          - paragraph [ref=e183]: Tokens
+          - paragraph [ref=e184]: "0"
+    - generic [ref=e185]:
+      - generic [ref=e187]:
+        - generic [ref=e188]:
+          - generic [ref=e189]:
+            - paragraph [ref=e190]: Office telemetry
+            - heading "Live office scene" [level=2] [ref=e191]
+            - paragraph [ref=e192]: "The queue cleared, so the office settled into a believable reset: pantry traffic, one lounge seat, one nap pod, and two lobsters still near the floor."
+          - generic [ref=e194]:
+            - generic [ref=e195]: idle floor
+            - generic [ref=e196]: 0 runs
+            - generic [ref=e197]: 0 handoffs
+        - generic [ref=e198]:
+          - button "Atlas idle" [ref=e199] [cursor=pointer]:
+            - generic [ref=e201]: Atlas
+            - generic [ref=e202]: idle
+          - button "Ember idle" [ref=e203] [cursor=pointer]:
+            - generic [ref=e205]: Ember
+            - generic [ref=e206]: idle
+          - button "Prism idle" [pressed] [ref=e207] [cursor=pointer]:
+            - generic [ref=e209]: Prism
+            - generic [ref=e210]: idle
+          - button "Quill idle" [ref=e211] [cursor=pointer]:
+            - generic [ref=e213]: Quill
+            - generic [ref=e214]: idle
+          - button "Scout idle" [ref=e215] [cursor=pointer]:
+            - generic [ref=e217]: Scout
+            - generic [ref=e218]: idle
+          - button "Sentinel idle" [ref=e219] [cursor=pointer]:
+            - generic [ref=e221]: Sentinel
+            - generic [ref=e222]: idle
+        - generic "Office room focus" [ref=e223]:
+          - button "Work floor 2 ACTIVE" [ref=e224] [cursor=pointer]:
+            - generic [ref=e225]: Work floor
+            - strong [ref=e226]: 2 ACTIVE
+          - button "Tea pantry 2 ACTIVE" [ref=e227] [cursor=pointer]:
+            - generic [ref=e228]: Tea pantry
+            - strong [ref=e229]: 2 ACTIVE
+          - button "Screening lounge 1 SEATED" [pressed] [ref=e230] [cursor=pointer]:
+            - generic [ref=e231]: Screening lounge
+            - strong [ref=e232]: 1 SEATED
+          - button "Quiet pod 1 SEATED" [ref=e233] [cursor=pointer]:
+            - generic [ref=e234]: Quiet pod
+            - strong [ref=e235]: 1 SEATED
+          - button "Mahjong room OPEN" [ref=e236] [cursor=pointer]:
+            - generic [ref=e237]: Mahjong room
+            - strong [ref=e238]: OPEN
+        - generic [ref=e242]:
+          - button "Work floor, 2 ACTIVE" [ref=e243] [cursor=pointer]
+          - button "Tea pantry, 2 ACTIVE" [ref=e245] [cursor=pointer]
+          - button "Screening lounge, 1 SEATED" [pressed] [ref=e247] [cursor=pointer]
+          - button "Quiet pod, 1 SEATED" [ref=e249] [cursor=pointer]
+          - button "Mahjong room, OPEN" [ref=e251] [cursor=pointer]
+          - generic [ref=e253]:
+            - strong [ref=e254]: Work floor
+            - generic [ref=e255]: 2 active
+          - generic [ref=e256]:
+            - strong [ref=e257]: Tea pantry
+            - generic [ref=e258]: 2 active
+          - generic [ref=e259]:
+            - strong [ref=e260]: Screening lounge
+            - generic [ref=e261]: 1 seated
+          - generic [ref=e262]:
+            - strong [ref=e263]: Quiet pod
+            - generic [ref=e264]: 1 seated
+          - generic [ref=e265]:
+            - strong [ref=e266]: Mahjong room
+            - generic [ref=e267]: open
+          - button "Work floor 2 ACTIVE" [ref=e268] [cursor=pointer]:
+            - generic [ref=e270]: Work floor
+            - strong [ref=e271]: 2 ACTIVE
+          - button "Tea pantry 2 ACTIVE" [ref=e272] [cursor=pointer]:
+            - generic [ref=e274]: Tea pantry
+            - strong [ref=e275]: 2 ACTIVE
+          - button "Screening lounge 1 SEATED" [ref=e276] [cursor=pointer]:
+            - generic [ref=e278]: Screening lounge
+            - strong [ref=e279]: 1 SEATED
+          - button "Quiet pod 1 SEATED" [ref=e280] [cursor=pointer]:
+            - generic [ref=e282]: Quiet pod
+            - strong [ref=e283]: 1 SEATED
+          - button "Mahjong room OPEN" [ref=e284] [cursor=pointer]:
+            - generic [ref=e286]: Mahjong room
+            - strong [ref=e287]: OPEN
+          - button "Atlas, analyzer, coffee" [ref=e290] [cursor=pointer]:
+            - generic [ref=e291]:
+              - strong [ref=e292]: Atlas
+              - emphasis [ref=e293]: idle
+          - button "Quill, writer, nap" [ref=e294] [cursor=pointer]:
+            - generic [ref=e295]:
+              - strong [ref=e296]: Quill
+              - emphasis [ref=e297]: idle
+          - button "Ember, collector, coffee" [ref=e298] [cursor=pointer]:
+            - generic [ref=e299]:
+              - strong [ref=e300]: Ember
+              - emphasis [ref=e301]: idle
+          - button "Prism, analyzer, cards" [ref=e302] [cursor=pointer]:
+            - generic [ref=e303]:
+              - strong [ref=e304]: Prism
+              - emphasis [ref=e305]: idle
+          - button "Sentinel, validator, work" [ref=e306] [cursor=pointer]:
+            - generic [ref=e307]:
+              - strong [ref=e308]: Sentinel
+              - emphasis [ref=e309]: idle
+          - button "Scout, collector, work" [ref=e310] [cursor=pointer]:
+            - generic [ref=e311]:
+              - strong [ref=e312]: Scout
+              - emphasis [ref=e313]: idle
+          - generic [ref=e372]:
+            - strong [ref=e373]: Floor radio
+            - generic [ref=e374]: Who restocked the beans?
+        - generic [ref=e314]:
+          - generic [ref=e315]:
+            - generic [ref=e316]:
+              - generic [ref=e317]:
+                - paragraph [ref=e318]: Room Focus
+                - heading "Screening lounge" [level=3] [ref=e319]
+              - generic [ref=e320]: 1 SEATED
+            - paragraph [ref=e321]: Prism is posted in the screening lounge right now.
+            - generic [ref=e323]: Prism
+          - generic [ref=e324]:
+            - generic [ref=e325]:
+              - generic [ref=e326]:
+                - paragraph [ref=e327]: Agent Focus
+                - heading "Prism" [level=3] [ref=e328]
+              - generic [ref=e329]: idle
+            - paragraph [ref=e330]: Prism is staged in the Screening lounge and ready for the next packet.
+            - generic [ref=e331]:
+              - generic [ref=e332]: Analyzer
+              - generic [ref=e333]: 0 completed
+              - generic [ref=e334]: Standby
+        - generic [ref=e335]:
+          - generic [ref=e336]: Signal
+          - strong [ref=e337]: Tea reset · waiting for the next packet
+      - generic [ref=e338]:
+        - generic [ref=e339]:
+          - generic [ref=e340]:
+            - generic [ref=e341]:
+              - paragraph [ref=e342]: Dispatch
+              - heading "Route a brief or redirect the current run" [level=2] [ref=e343]
+              - paragraph [ref=e344]: Describe the outcome, constraints, and release bar. This rail should stay operational even when the office scene gets busy.
+            - generic [ref=e345]:
+              - generic [ref=e346]: live
+              - generic [ref=e347]: 0 queued
+          - generic [ref=e348]:
+            - textbox "Describe the outcome you want, what matters most, and any constraints or approvals the crew should respect..." [ref=e349]
+            - generic [ref=e350]:
+              - button "Dispatch Workflow" [disabled] [ref=e351]
+              - button "Load sample brief" [ref=e352] [cursor=pointer]
+          - generic [ref=e353]:
+            - button "Build a lively OpenClaw office where idle agents nap, play cards, and jump back into work when tasks arrive." [ref=e354] [cursor=pointer]
+            - button "Take this customer request, split it into research, planning, writing, validation, and approval, then show th..." [ref=e355] [cursor=pointer]
+        - generic [ref=e356]:
+          - generic [ref=e357]:
+            - generic [ref=e358]:
+              - paragraph [ref=e359]: Final Output
+              - paragraph [ref=e360]: Live draft output
+            - generic [ref=e361]: streaming
+          - paragraph [ref=e364]: Submit a mission and the live package will appear here.
+        - generic [ref=e365]:
+          - generic [ref=e366]:
+            - generic [ref=e367]:
+              - paragraph [ref=e368]: Current Run
+              - heading "Waiting for a brief" [level=2] [ref=e369]
+            - generic [ref=e370]: standby
+          - generic [ref=e371]: Start a mission to see the active step, next handoff, and token load here.

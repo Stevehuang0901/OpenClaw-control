@@ -17,9 +17,9 @@ export default defineConfig({
       allow: [projectRoot]
     },
     proxy: {
-      "/api": "http://localhost:8791",
+      "/api": "http://localhost:8811",
       "/socket.io": {
-        target: "http://localhost:8791",
+        target: "http://localhost:8811",
         ws: true
       }
     }

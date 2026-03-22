@@ -5,21 +5,25 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently -k \"npm:dev:server\" \"npm:dev:web\"",
-    "dev:server": "tsx watch apps/server/src/index.ts",
+    "dev:server": "PORT=${PORT:-8811} tsx watch apps/server/src/index.ts",
     "dev:web": "vite --config apps/web/vite.config.ts",
     "build": "npm run build:web && npm run build:server",
     "build:web": "vite build --config apps/web/vite.config.ts",
     "build:server": "tsup apps/server/src/index.ts --format esm --target node20 --out-dir dist/server --clean",
-    "start": "node dist/server/index.js",
+    "start": "PORT=${PORT:-8811} node dist/server/index.js",
     "test": "vitest run"
   },
   "dependencies": {
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.5.0",
+    "@rollup/rollup-linux-arm64-gnu": "^4.59.0",
     "cors": "^2.8.5",
     "express": "^4.21.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "socket.io": "^4.8.1",
-    "socket.io-client": "^4.8.1"
+    "socket.io-client": "^4.8.1",
+    "three": "^0.183.2"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
@@ -30,6 +34,7 @@
     "@vitejs/plugin-react-swc": "^3.8.1",
     "autoprefixer": "^10.4.21",
     "concurrently": "^9.1.2",
+    "playwright": "^1.58.2",
     "postcss": "^8.5.3",
     "tailwindcss": "^3.4.17",
     "tsup": "^8.5.0",
